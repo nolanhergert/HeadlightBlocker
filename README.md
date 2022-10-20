@@ -14,11 +14,12 @@ Don't really need initial training, since it's kind of hard to set up. Just trai
 Just do one line in a diagonal.
 
 ### Gen 1
- * Assume rectangular positioning of motors. <strikethrough>I think horizontal and vertical distances do not need to be the same from car to car.</strikethrough> Need to know exact positioning, actually. If you want to move a little in x and your x position of a stepper is off, then the amount of r you need is different depending on your x position.
+ * Assume rectangular positioning of motors. ~~I think horizontal and vertical distances do not need to be the same from car to car.~~ Need to know exact positioning, actually. If you want to move a little in x and your x position of a stepper is off, then the amount of r you need is different depending on your x position.
 #### Getting exact position
   * Automatically:
     * To get exact position, I'm thinking of disabling/lowering power to all steppers except one under test. And pull on test stepper until stall/skipped steps/higher current draw. That tells you distance from wherever you were. Then do the same for other motors. Maybe with some diagonal stuff thrown in. Need to have less power to some steppers and be able to detect stall. I can do that, right?
-      * Detect current draw is pretty simple. Yeah, but it's not useful. We really need to detect skipped steps.
+      * Detect current draw is pretty simple. Yeah, but it's not useful. We really need to detect skipped steps. 
+        * Stall detection, maybe not useful though: https://electronics.stackexchange.com/questions/139278/is-it-possible-to-determine-load-on-a-stepper-motor-when-stopped
       * Multi channel digital potentiometer to limit current? Probably can't use PWM right? I forget what A4988 uses, I think it's %VCC though.
   * Manually:
     * Just measure with measuring tape each side and diagonals. Then need to enter using wifi and server. Annoying for most end-users, but not that bad for first prototypes. It's a one-time thing.
