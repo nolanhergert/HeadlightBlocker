@@ -1,7 +1,7 @@
 # HeadlightBlocker
 ## Features
   * Will block bright lights anywhere in your vision, including side view mirrors!
-
+  * Impact safe? with double sided 4 mil security film. Withstands a hard impact without glass shards (I think...): https://youtu.be/FGfVA1lMs6I?t=80
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
