@@ -7,31 +7,9 @@
 /* Constructor */
 U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* cs=*/ 1, /* dc=*/ 3, /* reset=*/ 2);
 
-#define LCD_NUM 1
+// Right side from viewers perspective
+//#define LCD_RIGHT
 
-void setup() {
-  // put your setup code here, to run once:
-  u8g2.begin();
-  if (LCD_NUM == 0) {
-    u8g2.setContrast(175); // good enough for straight on. Trade off "off" transparency with "on" darkness
-  } else {
-    u8g2.setContrast(200);
-  }
-  // put your main code here, to run repeatedly:
-  u8g2.firstPage();
-  do {
-    if (LCD_NUM == 0) {
-      u8g2.drawBox(20,85,20,20);
-    } else {
-      u8g2.drawBox(85,85,20,20);
-    }
-  } while ( u8g2.nextPage() );
-
-  delay(100);
-  Serial.begin(921600);
-  Serial.setTimeout(100); //ms
-  Serial.println("Startup");
-}
 
 // TODO: Test with lower voltage? Probably can't with this...
 
@@ -48,20 +26,61 @@ void setup() {
 uint8_t numLights = 0;
 #define MAX_LIGHTS 10
 
-// 30 degrees
+// FIXME to be camera actual dimensions
+#define CAM_HEIGHT 128
+#define CAM_WIDTH 128
+#define LCD_HEIGHT 128
+#define LCD_WIDTH  128
+
+// 23.3 degrees
 // Using Div by 1024 as it can be done with right shifts
-// .86602
-#define COS_ANGLE 887/1024
-// .5
-#define SIN_ANGLE 512/1024
+// Google: cos(23.3 degrees)*1024
+#define COS_ANGLE 940/1024
+#ifdef LCD_RIGHT
+#define SIN_ANGLE 405/1024
+#else
+#define SIN_ANGLE -405/1024
+#endif
 #define SCALE 1
 
+
+
+void setup() {
+  // put your setup code here, to run once:
+  u8g2.begin();
+#ifdef LCD_RIGHT
+    u8g2.setContrast(150); // good enough for straight on. Trade off "off" transparency with "on" darkness
+#else
+    u8g2.setContrast(200);
+#endif
+  // put your main code here, to run repeatedly:
+  u8g2.firstPage();
+  do {
+#ifdef LCD_RIGHT
+    u8g2.drawBox(0,85,8,8);
+    u8g2.drawBox(15,85,10,10);
+    u8g2.drawBox(35,85,12,12);
+    u8g2.drawBox(55,85,14,14);
+    u8g2.drawBox(75,85,16,16);
+#else
+    u8g2.drawBox(20,85,20,20);
+#endif
+
+  } while ( u8g2.nextPage() );
+
+  Serial.begin(921600);
+  Serial.setTimeout(100); //ms
+  Serial.println("Startup");
+  delay(500);
+  u8g2.clear();
+  delay(500);
+}
 
 // denoted in LCD pixels (corrected values)
 struct Light
 {
-  uint8_t xOffset;
-  uint8_t yOffset;
+  int32_t xOffset;
+  int32_t yOffset;
   uint8_t radius;
 };
 
@@ -69,12 +88,32 @@ struct Light lights[MAX_LIGHTS];
 
 char tempStr[15];
 uint8_t i = 0;
+uint8_t j = 0;
 char * strtokIndex = 0;
 uint8_t cameraX = 0;
 uint8_t cameraY = 0;
 uint8_t cameraRadius = 0;
 
+void CameraToLCD(struct Light * pLight) 
+{
+
+  // Rotate about center of view
+  pLight->xOffset -= CAM_WIDTH/2;
+  pLight->yOffset -= CAM_HEIGHT/2;
+
+  // Transform x,y to x',y' via scale and rotation...
+  // Won't be this simple probably
+  pLight->xOffset = (pLight->xOffset*COS_ANGLE + pLight->yOffset*SIN_ANGLE)*SCALE;
+  pLight->yOffset = (-pLight->xOffset*SIN_ANGLE + pLight->yOffset*COS_ANGLE)*SCALE;
+  pLight->radius *= SCALE;
+
+  pLight->xOffset += LCD_WIDTH/2;
+  pLight->yOffset += LCD_HEIGHT/2;
+}
+
+
 void loop() {
+  /*
   if (!Serial.available()) {
     return;
   }
@@ -96,11 +135,7 @@ void loop() {
     cameraRadius = atoi(strtokIndex);
     Serial.println("Got one!");
 
-    // Transform x,y to x',y' via scale and rotation...
-    // Won't be this simple probably
-    lights[numLights].xOffset = (cameraX*COS_ANGLE - cameraY*SIN_ANGLE)*SCALE;
-    lights[numLights].yOffset = (cameraX*SIN_ANGLE + cameraY*COS_ANGLE)*SCALE;
-    lights[numLights].radius = cameraRadius*SCALE;
+
     i = 0;
     numLights++;
     Serial.println(numLights);
@@ -120,5 +155,18 @@ void loop() {
     i = 0;
     numLights = 0;
   }
+  */
 
+  struct Light light;
+  do {
+    for (i = 0; i < 5; i++) {
+      for (j = 0; j < 5; j++) {
+        light.radius = 3;
+        light.xOffset = 40 + i*10;
+        light.yOffset = 50 + j*10;
+        CameraToLCD(&light);
+        u8g2.drawDisc(light.xOffset, light.yOffset, light.radius, U8G2_DRAW_ALL);
+      }
+    }
+  } while ( u8g2.nextPage() );
 }
