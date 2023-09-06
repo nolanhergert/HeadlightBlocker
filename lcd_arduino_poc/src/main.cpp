@@ -52,8 +52,10 @@ HardwareSerial Serial_UART(0);
 // denoted in LCD pixels (corrected values)
 struct Light
 {
-  int32_t xOffset;
-  int32_t yOffset;
+  uint16_t x1;
+  uint16_t y1;
+  uint16_t x2;
+  uint16_t y2;
   uint8_t radius;
 };
 
@@ -67,25 +69,27 @@ uint8_t cameraX = 0;
 uint8_t cameraY = 0;
 uint8_t cameraRadius = 0;
 
-void CameraToLCD(struct Light * pLight) 
-{
 
+
+void CameraToLCD(uint16_t *x, uint16_t *y) 
+{
   // Rotate about center of view
-  pLight->xOffset -= CAM_WIDTH/2;
-  pLight->yOffset -= CAM_HEIGHT/2;
+  int32_t xTemp = *x - CAM_WIDTH/2;
+  int32_t yTemp = *y - CAM_HEIGHT/2;
 
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
-  pLight->xOffset = (pLight->xOffset*COS_ANGLE - pLight->yOffset*SIN_ANGLE)*SCALE;
-  pLight->yOffset = (pLight->xOffset*SIN_ANGLE + pLight->yOffset*COS_ANGLE)*SCALE;
-  pLight->radius *= SCALE;
+  int32_t xTemp2 = (xTemp*COS_ANGLE - yTemp*SIN_ANGLE)*SCALE;
+  int32_t yTemp2 = (xTemp*SIN_ANGLE + yTemp*COS_ANGLE)*SCALE;
+  xTemp = xTemp2 + LCD_WIDTH/2;
+  yTemp = yTemp2 + LCD_HEIGHT/2;
 
-  pLight->xOffset += LCD_WIDTH/2;
-  pLight->yOffset += LCD_HEIGHT/2;
+  // Invert as the LCDs are upside down technically
+  yTemp = LCD_HEIGHT - yTemp;
 
-  pLight->yOffset = LCD_HEIGHT - pLight->yOffset;
+  *x = (uint16_t)xTemp;
+  *y = (uint16_t)yTemp;
 }
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -141,16 +145,19 @@ void loop() {
   Serial.println(i);
   
 
-  if (tempStr[i-1] == ';' || tempStr[i-1] == 'd') {
+  if (tempStr[i-1] == ';') {
     strtokIndex = strtok(tempStr, " ");
-    lights[numLights].xOffset = atoi(tempStr);
+    lights[numLights].x1 = atoi(tempStr);
     strtokIndex = strtok(NULL, " ");
-    lights[numLights].yOffset = atoi(strtokIndex);
+    lights[numLights].y1 = atoi(strtokIndex);
+      strtokIndex = strtok(tempStr, " ");
+    lights[numLights].x2 = atoi(tempStr);
     strtokIndex = strtok(NULL, ";");
-    lights[numLights].radius = atoi(strtokIndex);
+    lights[numLights].y2 = atoi(strtokIndex);
     Serial.println("Got one!");
 
-    CameraToLCD(&lights[numLights]);
+    CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
+    CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
 
     i = 0;
     numLights++;
@@ -164,7 +171,7 @@ void loop() {
     // Draw on LCD, reuse i
     do {
       for (i = 0; i < numLights; i++) {
-        u8g2.drawDisc(lights[i].xOffset, lights[i].yOffset, lights[i].radius, U8G2_DRAW_ALL);
+        u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
       }
     } while ( u8g2.nextPage() );
 
@@ -178,11 +185,15 @@ void loop() {
   do {
     for (i = 0; i < 5; i++) {
       for (j = 0; j < 5; j++) {
-        light.radius = 3;
-        light.xOffset = 80 + i*10;
-        light.yOffset = 80 + j*10;
-        CameraToLCD(&light);
-        u8g2.drawDisc(light.xOffset, light.yOffset, light.radius, U8G2_DRAW_ALL);
+        // TODO: Not quite done yet, not right values.
+        // But need to test...
+        light.x1 = 80 + i*10;
+        light.y1 = 80 + j*10;
+        light.x2 = 80 + i*20;
+        light.y2 = 80 + j*20;
+        CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
+        CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
+        u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
       }
     }
   } while ( u8g2.nextPage() );

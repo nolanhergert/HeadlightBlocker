@@ -148,8 +148,92 @@ void setup() {
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
 }
+typedef struct BoundingBox_ {
+  uint16 x1;
+  uint16 y1;
+  uint16 x2;
+  uint16 y2;
+} BoundingBox;
 
+
+boolean WithinBoundingBox (BoundingBox *b, uint16 expandBorder, uint16 x, uint16 y) {
+  return (x >= b->x1 - expandBorder &&
+          y >= b->y1 - expandBorder &&
+          x <  b->x2 + expandBorder && 
+          y <  b->y2 + expandBorder);    
+}
+
+void ExpandBoundingBox (BoundingBox *b, uint16 x, uint16 y) {
+  if (x < b->x1) b->x1 = x;
+  if (y < b->y1) b->y1 = y;
+  if (y > b->x2) b->x2 = x;
+  if (y > b->y2) b->y2 = y;
+}
+
+#define MAX_BOXES 20
+BoundingBox boxes[MAX_BOXES];
+uint8 numBoxes = 0;
+int8 containedInBoundingBoxIndex = -1;
 void loop() {
   // Do nothing. Everything is done in another task by the web server
   delay(10000);
+
+  /*
+  // Would like manual control of exposure, probably need to go manual or do some more research on the OpenMV API
+  // Although....maybe auto exposure is close to how eye would work? For a simple algorithm. Worth testing in a dark and light room and with some low background light like your car headlights pointed out.
+  res = s->set_ae_level(s, val);
+
+  // Ask for just grayscale and no JPEG compression
+  set_pixformat(s PIXFORMAT_GRAYSCALE);
+
+  for (int x = 0; x < width; x++) {
+    for (int y = 0; y < height; y++) {
+      if (!(im[x][y] > THRESHOLD)} {
+        continue;
+      }
+
+      containedInBoundingBoxIndex = -1;
+      for (int i = 0; i < numBoxes; i++) {
+        // If not within expanded border of this bounding box or
+        // within current bounding box, there's nothing to do
+        if (!WithinBoundingBox(&boxes[i], 1, x, y) || 
+             WithinBoundingBox(&boxes[i], 0, x, y)) {
+          continue;
+        }
+
+        // Expand current box
+        ExpandBoundingBox(&boxes[i], x, y);
+
+        if (containedInBoundingBoxIndex == -1) {
+          containedInBoundingBoxIndex = i;
+          continue;
+        }
+
+        // Combine bounding boxes and remove current box
+        ExpandBoundingBox(&boxes[containedInBoundingBoxIndex], boxes[i].x1, boxes[i].y1);
+        ExpandBoundingBox(&boxes[containedInBoundingBoxIndex], boxes[i].x2, boxes[i].y2);
+        for (; i < numBoxes; i++) {
+          boxes[i-1] = boxes[i];
+        }
+      }
+
+      if (containedInBoundingBoxIndex == -1) {
+        // Create new box
+        boxes[i].x1 = x;
+        boxes[i].y1 = y;
+        boxes[i].x2 = x;
+        boxes[i].y2 = y;
+        numBoxes++;
+        assert(numBoxes < MAX_BOXES);
+      }
+    }
+  }
+
+  // Write out to ... which serial?
+  for (int i = 0; i < numBoxes; i++) {
+    Serial.print("%d %d %d %d; ", boxes[i].x1, boxes[i].y1, boxes[i].x2, boxes[i].y2);
+  }
+  Serial.println();
+  
+  */
 }
