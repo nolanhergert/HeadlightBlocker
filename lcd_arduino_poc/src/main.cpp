@@ -9,7 +9,7 @@
 U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* cs=*/ 1, /* dc=*/ 3, /* reset=*/ 2);
 
 // Right side from viewers perspective
-//#define LCD_RIGHT
+#define LCD_RIGHT
 
 
 // TODO: Test with lower voltage? Probably can't with this...
@@ -28,8 +28,8 @@ uint8_t numLights = 0;
 #define MAX_LIGHTS 10
 
 // FIXME to be camera actual dimensions
-#define CAM_HEIGHT 128
-#define CAM_WIDTH 128
+#define CAM_HEIGHT 320
+#define CAM_WIDTH 240
 #define LCD_HEIGHT 128
 #define LCD_WIDTH  128
 
@@ -61,7 +61,8 @@ struct Light
 
 struct Light lights[MAX_LIGHTS];
 
-char tempStr[15];
+static const uint8_t tempStrLength = 30;
+char tempStr[tempStrLength];
 uint8_t i = 0;
 uint8_t j = 0;
 char * strtokIndex = 0;
@@ -71,7 +72,7 @@ uint8_t cameraRadius = 0;
 
 
 
-void CameraToLCD(uint16_t *x, uint16_t *y) 
+void CameraToLCD(uint16_t *x, uint16_t *y)
 {
   // Rotate about center of view
   int32_t xTemp = *x - CAM_WIDTH/2;
@@ -124,73 +125,93 @@ void setup() {
   delay(500);
 }
 
+void drawLightsOnDisplay() {
+  uint16_t i = 0;
+  Serial.println("Drawing!");
+  Serial.println(numLights);
+  u8g2.clearDisplay();
+
+  // Draw on LCD
+  do {
+    for (i = 0; i < numLights; i++) {
+      u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
+    }
+  } while ( u8g2.nextPage() );
+}
+
 void loop() {
   if (!Serial.available() && !Serial_UART.available()) {
     return;
   }
 
+  // Receive data from serial/uart
   if (Serial.available()) {
-    // Collect data until a semicolon or newline
     tempStr[i] = Serial.read();
     // Forward message from USB onto other display
     Serial_UART.print(tempStr[i]);
   } else {
-    // Collect data until a semicolon or newline
+    // Receive message from serial UART
     tempStr[i] = Serial_UART.read();
   }
 
-  i++;
   Serial.println(tempStr);
-  Serial.println(numLights);
-  Serial.println(i);
-  
 
-  if (tempStr[i-1] == ';') {
-    strtokIndex = strtok(tempStr, " ");
-    lights[numLights].x1 = atoi(tempStr);
-    strtokIndex = strtok(NULL, " ");
-    lights[numLights].y1 = atoi(strtokIndex);
-      strtokIndex = strtok(tempStr, " ");
-    lights[numLights].x2 = atoi(tempStr);
-    strtokIndex = strtok(NULL, ";");
-    lights[numLights].y2 = atoi(strtokIndex);
-    Serial.println("Got one!");
+  i++;
 
-    CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
-    CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
-
+  if (i >= tempStrLength) {
     i = 0;
-    numLights++;
-    Serial.println(numLights);
-  } else if (numLights >= MAX_LIGHTS || tempStr[i-1] == '\r' || tempStr[i-1] == '\n') {
-    Serial.println("Drawing!");
-    Serial.println(numLights);
-    u8g2.clearDisplay();
+    return;
+  }
 
+  // Collect data until a semicolon or newline
+  if (!(tempStr[i-1] == ';' ||  tempStr[i-1] == '\r' || tempStr[i-1] == '\n')) {
+    return;
+  }
 
-    // Draw on LCD, reuse i
-    do {
-      for (i = 0; i < numLights; i++) {
-        u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
-      }
-    } while ( u8g2.nextPage() );
-
+  if (tempStr[0] == '\r' || tempStr[0] == '\n' || numLights >= MAX_LIGHTS) {
+    //drawLightsOnDisplay();
+    Serial.println("Draw lights! Badly");
     i = 0;
     numLights = 0;
+    return;
   }
-  
-  
+
+  // We have a potential new light
+  // Needs to start with a digit or newline
+  if (!(isDigit(tempStr[0]))) {
+    i = 0;
+    return;
+  }
+
+  // Add to lights
+  Serial.println("Adding to lights!");
+  strtokIndex = strtok(tempStr, " ");
+  lights[numLights].x1 = atoi(tempStr);
+  strtokIndex = strtok(NULL, " ");
+  lights[numLights].y1 = atoi(strtokIndex);
+  strtokIndex = strtok(NULL, " ");
+  lights[numLights].x2 = atoi(strtokIndex);
+  strtokIndex = strtok(NULL, ";");
+  lights[numLights].y2 = atoi(strtokIndex);
+  Serial.println("Got one!");
+
+  CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
+  CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
+
+  i = 0;
+  numLights++;
+  Serial.println(numLights);
+
+
 /*
   struct Light light;
   do {
     for (i = 0; i < 5; i++) {
       for (j = 0; j < 5; j++) {
-        // TODO: Not quite done yet, not right values.
-        // But need to test...
-        light.x1 = 80 + i*10;
-        light.y1 = 80 + j*10;
-        light.x2 = 80 + i*20;
-        light.y2 = 80 + j*20;
+        light.x1 = 80 + i*20;
+        light.y1 = 80 + j*20;
+        light.x2 = lights.x1 + 10;
+        light.y2 = lights.y2 + 10;
         CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
         CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
         u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
