@@ -66,38 +66,12 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_UXGA;
-  config.pixel_format = PIXFORMAT_JPEG; // for streaming
-  //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
+  config.frame_size = FRAMESIZE_QVGA;
+  config.pixel_format = PIXFORMAT_GRAYSCALE; // for processing
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
   config.fb_count = 1;
-
-  // if PSRAM IC present, init with UXGA resolution and higher JPEG quality
-  //                      for larger pre-allocated frame buffer.
-  if(config.pixel_format == PIXFORMAT_JPEG){
-    if(psramFound()){
-      config.jpeg_quality = 10;
-      config.fb_count = 2;
-      config.grab_mode = CAMERA_GRAB_LATEST;
-    } else {
-      // Limit the frame size when PSRAM is not available
-      config.frame_size = FRAMESIZE_SVGA;
-      config.fb_location = CAMERA_FB_IN_DRAM;
-    }
-  } else {
-    // Best option for face detection/recognition
-    config.frame_size = FRAMESIZE_240X240;
-#if CONFIG_IDF_TARGET_ESP32S3
-    config.fb_count = 2;
-#endif
-  }
-
-#if defined(CAMERA_MODEL_ESP_EYE)
-  pinMode(13, INPUT_PULLUP);
-  pinMode(14, INPUT_PULLUP);
-#endif
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -106,31 +80,11 @@ void setup() {
     return;
   }
 
+
   sensor_t * s = esp_camera_sensor_get();
-  // initial sensors are flipped vertically and colors are a bit saturated
-  if (s->id.PID == OV3660_PID) {
-    s->set_vflip(s, 1); // flip it back
-    s->set_brightness(s, 1); // up the brightness just a bit
-    s->set_saturation(s, -2); // lower the saturation
-  }
-  // drop down frame size for higher initial frame rate
-  if(config.pixel_format == PIXFORMAT_JPEG){
-    s->set_framesize(s, FRAMESIZE_QVGA);
-  }
-
-#if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
-  s->set_vflip(s, 1);
-  s->set_hmirror(s, 1);
-#endif
-
-#if defined(CAMERA_MODEL_ESP32S3_EYE)
-  s->set_vflip(s, 1);
-#endif
-
-// Setup LED FLash if LED pin is defined in camera_pins.h
-#if defined(LED_GPIO_NUM)
-  setupLedFlash(LED_GPIO_NUM);
-#endif
+  // Would like manual control of exposure, probably need to go manual or do some more research on the OpenMV API
+  // Although....maybe auto exposure is close to how eye would work? For a simple algorithm. Worth testing in a dark and light room and with some low background light like your car headlights pointed out.
+  s->set_ae_level(s, -2);
 
   WiFi.begin(ssid, password);
   WiFi.setSleep(false);
@@ -147,56 +101,69 @@ void setup() {
   Serial.print("Camera Ready! Use 'http://");
   Serial.print(WiFi.localIP());
   Serial.println("' to connect");
+
+
+
+
 }
 typedef struct BoundingBox_ {
-  uint16 x1;
-  uint16 y1;
-  uint16 x2;
-  uint16 y2;
+  uint16_t x1;
+  uint16_t y1;
+  uint16_t x2;
+  uint16_t y2;
 } BoundingBox;
 
+#define THRESHOLD (254)
 
-boolean WithinBoundingBox (BoundingBox *b, uint16 expandBorder, uint16 x, uint16 y) {
+// Does the bounding box (plus an optional border expansion) contain point (x,y)?
+boolean WithinBoundingBox (BoundingBox *b, uint16_t expandBorder, uint16_t x, uint16_t y) {
   return (x >= b->x1 - expandBorder &&
           y >= b->y1 - expandBorder &&
-          x <  b->x2 + expandBorder && 
-          y <  b->y2 + expandBorder);    
+          x <  b->x2 + expandBorder &&
+          y <  b->y2 + expandBorder);
 }
 
-void ExpandBoundingBox (BoundingBox *b, uint16 x, uint16 y) {
+// Expand a given bounding box to contain a new point (x,y)
+void ExpandBoundingBox (BoundingBox *b, uint16_t x, uint16_t y) {
   if (x < b->x1) b->x1 = x;
   if (y < b->y1) b->y1 = y;
-  if (y > b->x2) b->x2 = x;
+  if (x > b->x2) b->x2 = x;
   if (y > b->y2) b->y2 = y;
 }
 
 #define MAX_BOXES 20
 BoundingBox boxes[MAX_BOXES];
-uint8 numBoxes = 0;
-int8 containedInBoundingBoxIndex = -1;
+uint8_t numBoxes = 0;
+int8_t containedInBoundingBox = -1;
+uint32_t countWhitePixels = 0;
 void loop() {
+  camera_fb_t *fb = NULL;
   // Do nothing. Everything is done in another task by the web server
   delay(10000);
 
-  /*
-  // Would like manual control of exposure, probably need to go manual or do some more research on the OpenMV API
-  // Although....maybe auto exposure is close to how eye would work? For a simple algorithm. Worth testing in a dark and light room and with some low background light like your car headlights pointed out.
-  res = s->set_ae_level(s, val);
+/*
+  fb = esp_camera_fb_get();
 
-  // Ask for just grayscale and no JPEG compression
-  set_pixformat(s PIXFORMAT_GRAYSCALE);
-
-  for (int x = 0; x < width; x++) {
-    for (int y = 0; y < height; y++) {
-      if (!(im[x][y] > THRESHOLD)} {
+  countWhitePixels = 0;
+  for (int x = 0; x < fb->width; x++) {
+    for (int y = 0; y < fb->height; y++) {
+      if (fb->buf[x + y*fb->width] < THRESHOLD) {
         continue;
       }
 
-      containedInBoundingBoxIndex = -1;
+      countWhitePixels++;
+    }
+  }
+  Serial.println(countWhitePixels);
+
+
+      // We found a bright pixel! Add it to an existing bounding box
+      // or make a new one
+      containedInBoundingBox = -1;
       for (int i = 0; i < numBoxes; i++) {
         // If not within expanded border of this bounding box or
         // within current bounding box, there's nothing to do
-        if (!WithinBoundingBox(&boxes[i], 1, x, y) || 
+        if (!WithinBoundingBox(&boxes[i], 1, x, y) ||
              WithinBoundingBox(&boxes[i], 0, x, y)) {
           continue;
         }
@@ -204,20 +171,20 @@ void loop() {
         // Expand current box
         ExpandBoundingBox(&boxes[i], x, y);
 
-        if (containedInBoundingBoxIndex == -1) {
-          containedInBoundingBoxIndex = i;
+        if (containedInBoundingBox == -1) {
+          containedInBoundingBox = i;
           continue;
         }
 
-        // Combine bounding boxes and remove current box
-        ExpandBoundingBox(&boxes[containedInBoundingBoxIndex], boxes[i].x1, boxes[i].y1);
-        ExpandBoundingBox(&boxes[containedInBoundingBoxIndex], boxes[i].x2, boxes[i].y2);
+        // Overlapping bounding boxes. Combine bounding boxes and remove current box
+        ExpandBoundingBox(&boxes[containedInBoundingBox], boxes[i].x1, boxes[i].y1);
+        ExpandBoundingBox(&boxes[containedInBoundingBox], boxes[i].x2, boxes[i].y2);
         for (; i < numBoxes; i++) {
           boxes[i-1] = boxes[i];
         }
       }
 
-      if (containedInBoundingBoxIndex == -1) {
+      if (containedInBoundingBox == -1) {
         // Create new box
         boxes[i].x1 = x;
         boxes[i].y1 = y;
@@ -229,11 +196,14 @@ void loop() {
     }
   }
 
+
+  // TODO: Write out to web gui?
+
   // Write out to ... which serial?
   for (int i = 0; i < numBoxes; i++) {
     Serial.print("%d %d %d %d; ", boxes[i].x1, boxes[i].y1, boxes[i].x2, boxes[i].y2);
   }
   Serial.println();
-  
-  */
+
+*/
 }
