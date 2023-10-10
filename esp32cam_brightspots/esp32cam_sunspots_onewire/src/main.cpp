@@ -35,8 +35,8 @@
 // ===========================
 // Enter your WiFi credentials
 // ===========================
-const char* ssid = "**********";
-const char* password = "**********";
+const char* ssid = "fespa302";
+const char* password = "fespa-kyoto";
 
 void startCameraServer();
 void setupLedFlash(int pin);
@@ -140,6 +140,10 @@ void loop() {
   camera_fb_t *fb = NULL;
   // Do nothing. Everything is done in another task by the web server
   delay(10000);
+  
+  
+  
+  // TODO: Just do a circle of a set radius at the first bright pixel you see. Mostly done already.
 
 /*
   fb = esp_camera_fb_get();
@@ -203,7 +207,7 @@ void loop() {
   for (int i = 0; i < numBoxes; i++) {
     Serial.print("%d %d %d %d; ", boxes[i].x1, boxes[i].y1, boxes[i].x2, boxes[i].y2);
   }
-  Serial.println();
+  Serial.println("d");
 
 */
 }
