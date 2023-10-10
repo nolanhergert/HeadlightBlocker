@@ -21,7 +21,7 @@ U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* 
 // 10 = x offset in pixels from top left
 // 20 = y offset in pixels from top left
 // 10 = radius in pixels of object to block
-// ";", then any additional circles to show, ended by "\n"
+// ";", then any additional circles to show, ended by "d"
 
 
 uint8_t numLights = 0;
@@ -54,8 +54,6 @@ struct Light
 {
   uint16_t x1;
   uint16_t y1;
-  uint16_t x2;
-  uint16_t y2;
   uint8_t radius;
 };
 
@@ -74,6 +72,10 @@ uint8_t cameraRadius = 0;
 
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
+
+  Serial.print(*x);
+  Serial.print(", ");
+  Serial.println(*y);
   // Rotate about center of view
   int32_t xTemp = *x - CAM_WIDTH/2;
   int32_t yTemp = *y - CAM_HEIGHT/2;
@@ -90,6 +92,10 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp;
+
+  Serial.print(xTemp);
+  Serial.print(", ");
+  Serial.println(yTemp);
 }
 
 void setup() {
@@ -134,7 +140,8 @@ void drawLightsOnDisplay() {
   // Draw on LCD
   do {
     for (i = 0; i < numLights; i++) {
-      u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
+      // A bit hacky, but I need rotated squares for now
+      u8g2.drawDisc(lights[i].x1, lights[i].y1, lights[i].radius);
     }
   } while ( u8g2.nextPage() );
 }
@@ -163,14 +170,13 @@ void loop() {
     return;
   }
 
-  // Collect data until a semicolon or newline
-  if (!(tempStr[i-1] == ';' ||  tempStr[i-1] == '\r' || tempStr[i-1] == '\n')) {
+  // Collect data until a semicolon or 'd' (for done)
+  if (!(tempStr[i-1] == ';' || tempStr[i-1] == 'd')) {
     return;
   }
 
-  if (tempStr[0] == '\r' || tempStr[0] == '\n' || numLights >= MAX_LIGHTS) {
-    //drawLightsOnDisplay();
-    Serial.println("Draw lights! Badly");
+  if (tempStr[0] == 'd' || numLights >= MAX_LIGHTS) {
+    drawLightsOnDisplay();
     i = 0;
     numLights = 0;
     return;
@@ -188,15 +194,12 @@ void loop() {
   strtokIndex = strtok(tempStr, " ");
   lights[numLights].x1 = atoi(tempStr);
   strtokIndex = strtok(NULL, " ");
-  lights[numLights].y1 = atoi(strtokIndex);
-  strtokIndex = strtok(NULL, " ");
-  lights[numLights].x2 = atoi(strtokIndex);
+  lights[numLights].y1 = atoi(tempStr);
   strtokIndex = strtok(NULL, ";");
-  lights[numLights].y2 = atoi(strtokIndex);
+  lights[numLights].radius = atoi(strtokIndex);
   Serial.println("Got one!");
 
   CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
-  CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
 
   i = 0;
   numLights++;
