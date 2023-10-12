@@ -27,11 +27,13 @@ U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* 
 uint8_t numLights = 0;
 #define MAX_LIGHTS 10
 
-// FIXME to be camera actual dimensions
-#define CAM_HEIGHT 320
-#define CAM_WIDTH 240
-#define LCD_HEIGHT 128
-#define LCD_WIDTH  128
+// FIXME to be camera actual resolution
+static const uint16_t cam_width = 256;
+static const uint16_t cam_height = 256;
+static const uint16_t lcd_width = 128;
+static const uint16_t lcd_height = 128;
+static const uint16_t scale = cam_height/lcd_height; // Very rough (integer) guess for now, probably will need fractional
+
 
 
 HardwareSerial Serial_UART(0);
@@ -45,7 +47,6 @@ HardwareSerial Serial_UART(0);
 #else
 #define SIN_ANGLE -405/1024
 #endif
-#define SCALE 1
 
 
 
@@ -77,18 +78,18 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
   Serial.print(", ");
   Serial.println(*y);
   // Rotate about center of view
-  int32_t xTemp = *x - CAM_WIDTH/2;
-  int32_t yTemp = *y - CAM_HEIGHT/2;
+  int32_t xTemp = *x;
+  int32_t yTemp = *y;
 
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
-  int32_t xTemp2 = (xTemp*COS_ANGLE - yTemp*SIN_ANGLE)*SCALE;
-  int32_t yTemp2 = (xTemp*SIN_ANGLE + yTemp*COS_ANGLE)*SCALE;
-  xTemp = xTemp2 + LCD_WIDTH/2;
-  yTemp = yTemp2 + LCD_HEIGHT/2;
+  int32_t xTemp2 = (xTemp*COS_ANGLE - yTemp*SIN_ANGLE)/scale;
+  int32_t yTemp2 = (xTemp*SIN_ANGLE + yTemp*COS_ANGLE)/scale;
+  xTemp = xTemp2;
+  yTemp = yTemp2;
 
   // Invert as the LCDs are upside down technically
-  yTemp = LCD_HEIGHT - yTemp;
+  yTemp = lcd_height - yTemp;
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp;
@@ -110,11 +111,13 @@ void setup() {
   u8g2.firstPage();
   do {
 #ifdef LCD_RIGHT
-    u8g2.drawBox(0,85,8,8);
+    u8g2.drawDisc(60,60,10);
+    /*
     u8g2.drawBox(15,85,10,10);
     u8g2.drawBox(35,85,12,12);
     u8g2.drawBox(55,85,14,14);
     u8g2.drawBox(75,85,16,16);
+    */
 #else
     u8g2.drawBox(20,85,20,20);
 #endif
@@ -127,12 +130,15 @@ void setup() {
 
   Serial_UART.begin(921600);
   delay(500);
-  u8g2.clear();
+  //u8g2.clear();
   delay(500);
 }
 
 void drawLightsOnDisplay() {
   uint16_t i = 0;
+  uint16_t j = 0;
+
+  struct Light light;
   Serial.println("Drawing!");
   Serial.println(numLights);
   u8g2.clearDisplay();
@@ -143,8 +149,19 @@ void drawLightsOnDisplay() {
       // A bit hacky, but I need rotated squares for now
       u8g2.drawDisc(lights[i].x1, lights[i].y1, lights[i].radius);
     }
+    // Draw test circles
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 5; j++) {
+        light.x1 = 40 + i*10;
+        light.y1 = 40 + j*10;
+        light.radius = 2;
+        CameraToLCD(&light.x1, &light.y1);
+        u8g2.drawDisc(light.x1, light.y1, light.radius);
+      }
+    }
   } while ( u8g2.nextPage() );
 }
+
 
 void loop() {
   if (!Serial.available() && !Serial_UART.available()) {
@@ -204,22 +221,4 @@ void loop() {
   i = 0;
   numLights++;
   Serial.println(numLights);
-
-
-/*
-  struct Light light;
-  do {
-    for (i = 0; i < 5; i++) {
-      for (j = 0; j < 5; j++) {
-        light.x1 = 80 + i*20;
-        light.y1 = 80 + j*20;
-        light.x2 = lights.x1 + 10;
-        light.y2 = lights.y2 + 10;
-        CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
-        CameraToLCD(&lights[numLights].x2, &lights[numLights].y2);
-        u8g2.drawBox(lights[i].x1, lights[i].y1, lights[i].x2, lights[i].y2);
-      }
-    }
-  } while ( u8g2.nextPage() );
-  */
 }
