@@ -1,7 +1,10 @@
 # HeadlightBlocker
+Are you like tons of people annoyed with bright lights in the evening hurting your eyes! There's an *actual* solution for this, here are some demo videos from a previous startup:
+View of Dyneye prototype: http://www.youtube.com/watch?v=cSOoYN_iOBY
+
+View of Dyneye blocking sun: https://www.youtube.com/watch?v=PTG62q7hMcY
 ## Features
   * Will block all bright lights anywhere in your vision, including side view mirrors, reflected glare off the car / road (when raining at night). Sunglasses don't cut it because they darken the entire field of view evenly, which just makes your eyes dilate and then you're back to what you had before!
-  * Impact safe? with double sided 4 mil security film. Withstands a hard impact without glass shards (I think...): https://youtu.be/FGfVA1lMs6I?t=80
 
 ## Justification
   * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
