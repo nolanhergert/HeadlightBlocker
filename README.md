@@ -1,18 +1,21 @@
 # HeadlightBlocker
-Are you like tons of people annoyed with bright lights in the evening hurting your eyes! There's an *actual* solution for this, here are some demo videos from a previous startup:
+Are you like tons of people annoyed with bright lights in the evening hurting your eyes? There's an *actual* solution for this, here are some demo videos from a previous startup:
 
 View of Dyneye prototype: http://www.youtube.com/watch?v=cSOoYN_iOBY
 
 View of Dyneye blocking sun: https://www.youtube.com/watch?v=PTG62q7hMcY
 ## Features
-  * Will block all bright lights anywhere in your vision, including side view mirrors, reflected glare off the car / road (when raining at night). Sunglasses don't cut it because they darken the entire field of view evenly, which just makes your eyes dilate and then you're back to what you had before!
-
+  * Will dim all bright lights anywhere in your vision, including side view mirrors, reflected glare off the car / road (when raining at night). Sunglasses don't cut it because they darken the entire field of view evenly, which just makes your eyes dilate and then you're back to what you had before!
+    
 ## Justification
   * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
      * It's painful for your eyes to over expose and desperately shrink iris
      * It takes time for your eyes to dilate again
   * NHSTA dataset: [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
-  * 
+
+## Target Customers
+  * Drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor
+  * Same group, but nighttime where there are occasional glaring headlights and no streetlights to keep your pupils dilated. Causes very dangerous whiteout. Try it yourself at nighttime / a dark room with your phone LED pointed at your eyes!
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
