@@ -14,8 +14,12 @@ View of Dyneye blocking sun: https://www.youtube.com/watch?v=PTG62q7hMcY
   * NHSTA dataset: [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
 
 ## Target Customers
-  * Drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor
+  * Drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor but still need to see details
   * Same group, but nighttime where there are occasional glaring headlights and no streetlights to keep your pupils dilated. Causes very dangerous whiteout. Try it yourself at nighttime / a dark room with your phone LED pointed at your eyes!
+    * Especially a problem in India, where drivers use high beams a lot and there are potholes, people crossing, etc. However budget is a lot less than USA.
+
+### Stretch Customers
+  * Fishing in choppy water. Both for polarizing effect of reducing glare but for blocking light? FSTN refresh rate is pretty fast still. https://youtu.be/6h2D-CnLQEc?si=O5FLN6evWkWHE9HI&t=299
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
