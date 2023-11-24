@@ -17,12 +17,14 @@ View of Dyneye blocking sun: https://www.youtube.com/watch?v=PTG62q7hMcY
   * Nighttime driving in the countryside, there are occasional glaring headlights and no streetlights to keep your pupils dilated. Causes pain and potentially very dangerous whiteout for multiple seconds. Try it yourself at nighttime / a dark room with your phone LED pointed at your eyes!
     * Especially a problem in India, where drivers use high beams a lot and there are potholes, people crossing, etc. However budget is a lot less than USA.
     * Problem is also worse with older drivers (pupils don't re-dilate quickly) and those with astigmatism and other visual problems (glare "halo" is even wider and more distracting)
+    * Tall trucks/SUVs with high headlights still need to see too! But suffers for sedan drivers.
   * Drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor but still need to see details
   * 
     
 
 ### Stretch Customers
-  * Fishing in choppy water. Both for polarizing effect of reducing glare but for blocking light? FSTN refresh rate is pretty fast still. https://youtu.be/6h2D-CnLQEc?si=O5FLN6evWkWHE9HI&t=299
+  * Fishing in choppy water. Apparently normal polarized sunglasses don't work? Might be interesting to have a one-filter version that has an LCD for rotating pixels oncoming light so its better cancelled by the filter without making the pixel dark/black.
+    * FSTN refresh rate is pretty fast still. https://youtu.be/6h2D-CnLQEc?si=O5FLN6evWkWHE9HI&t=299
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
