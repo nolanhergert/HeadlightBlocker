@@ -27,14 +27,19 @@
 
 const int LCD_BACKPLANE = 5;
 const int LCD_SEGMENT = 6;
-const int LCD_DELAY_MS_MAX = 1000/30; // 30FPS, switched twice
+const int LCD_DELAY_MS_MAX = 1000/30/2; // 30FPS, switched twice
 const int LCD_CHARGE_TIME_MS = 1;
 const int CAMERA_DELAY_US = 1; // 30FPS
 const int CAMERA_SWITCH_ITERATIONS = 500; //1ms is ok still
-int16_t lcd_duty_cycle_diff = 2;
+int16_t lcd_duty_cycle_diff = 1;
 uint16_t lcd_duty_cycle = lcd_duty_cycle_diff+1;
 uint16_t lcd_duty_cycle_min = 0;
-uint16_t lcd_duty_cycle_max = 150; // Driving with 5V is causing ghosting, so it's a 3.3V LCD. Also temperature dependent!
+// Driving with 5V is causing ghosting, so it's a 3.3V LCD.
+// Doesn't seem to be frequency dependent, but is temperature dependent!
+// Still getting ghosting even at really low duty cycle (>20%)! So...need
+// to think about this some more, maybe lower 5V down to 3.3V so you can raw pwm still
+uint16_t lcd_duty_cycle_max = 40;
+
 
 
 // the setup function runs once when you press reset or power the board
@@ -50,15 +55,11 @@ void loop() {
   // Basic setup
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
-  delay(LCD_DELAY_MS_MAX/3);
-  digitalWrite(LCD_SEGMENT, LOW);
-  delay(2*LCD_DELAY_MS_MAX/3);
+  delay(LCD_DELAY_MS_MAX);
 
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, LOW);
-  delay(LCD_DELAY_MS_MAX/3);
-  digitalWrite(LCD_SEGMENT, HIGH);
-  delay(2*LCD_DELAY_MS_MAX/3);
+  delay(LCD_DELAY_MS_MAX);
 
 
   /*
