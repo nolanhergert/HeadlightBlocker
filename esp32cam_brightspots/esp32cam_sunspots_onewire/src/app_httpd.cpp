@@ -584,25 +584,21 @@ static esp_err_t stream_handler(httpd_req_t *req)
         else
         {
             uint32_t countWhitePixels = 0;
-            uint16_t lastWhitePixelX = 0;
-            uint16_t lastWhitePixelY = 0;
+            uint16_t firstWhitePixelX = 0;
+            uint16_t firstWhitePixelY = 0;
             for (int x = 0; x < fb->width; x++) {
                 for (int y = 0; y < fb->height; y++) {
-                    if (fb->buf[x + y*fb->width] < 254) {
-                        continue;
+                    if (fb->buf[x + y*fb->width] == 255) {
+                      firstWhitePixelX = x;
+                      firstWhitePixelY = y;
+                      log_printf("%d %d;\n", firstWhitePixelX, firstWhitePixelY);
+                      goto BreakLoop;
                     }
-
-                    countWhitePixels++;
-                    // Assume one small bright light right now
-                    lastWhitePixelX = x;
-                    lastWhitePixelY = y;
-
                 }
             }
-            if (countWhitePixels > 5) {
+BreakLoop:
 
-                log_printf("%d %d %d %d;\n", lastWhitePixelX-20, lastWhitePixelY-20, lastWhitePixelX, lastWhitePixelY);
-            }
+
 
             _timestamp.tv_sec = fb->timestamp.tv_sec;
             _timestamp.tv_usec = fb->timestamp.tv_usec;
