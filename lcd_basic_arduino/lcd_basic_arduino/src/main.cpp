@@ -51,7 +51,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-
+/*
   // Basic setup
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
@@ -60,6 +60,23 @@ void loop() {
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, LOW);
   delay(LCD_DELAY_MS_MAX);
+*/
+
+
+  // Add a resistor in-line to the current by using a pull-up resistance (20K for atmega).
+  // This essentially creates an RC filter which smooths out the PWM pulses to the desired steady-state voltage.
+  // But need to make sure to do opposite direction too
+  pinMode(LCD_BACKPLANE, OUTPUT);
+  digitalWrite(LCD_BACKPLANE, LOW);
+  pinMode(LCD_SEGMENT, INPUT_PULLUP);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(1000);
+
+  pinMode(LCD_BACKPLANE, INPUT_PULLUP);
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  pinMode(LCD_SEGMENT, OUTPUT);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(1000);
 
 
   /*

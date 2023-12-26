@@ -66,12 +66,12 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_QVGA;
+  config.frame_size = FRAMESIZE_CIF;
   config.pixel_format = PIXFORMAT_GRAYSCALE; // for processing
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
-  config.fb_count = 1;
+  config.fb_count = 2;
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -84,7 +84,8 @@ void setup() {
   sensor_t * s = esp_camera_sensor_get();
   // Would like manual control of exposure, probably need to go manual or do some more research on the OpenMV API
   // Although....maybe auto exposure is close to how eye would work? For a simple algorithm. Worth testing in a dark and light room and with some low background light like your car headlights pointed out.
-  s->set_ae_level(s, -2);
+  s->set_exposure_ctrl(s, 0);
+  s->set_aec_value(s, 0);
 
   WiFi.begin(ssid, password);
   WiFi.setSleep(false);
