@@ -60,11 +60,9 @@ struct Light
 
 struct Light lights[MAX_LIGHTS];
 
-static const uint8_t tempStrLength = 30;
-char tempStr[tempStrLength];
-uint8_t i = 0;
-uint8_t j = 0;
-char * strtokIndex = 0;
+static const uint8_t tempStrLengthMax = 30;
+char tempStr[tempStrLengthMax];
+uint8_t tempStrLength = 0;
 uint8_t cameraX = 0;
 uint8_t cameraY = 0;
 uint8_t cameraRadius = 0;
@@ -74,13 +72,9 @@ uint8_t cameraRadius = 0;
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
 
-  Serial.print(*x);
-  Serial.print(", ");
-  Serial.println(*y);
-  // Rotate about center of view
   int32_t xTemp = *x;
   int32_t yTemp = *y;
-
+/*
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
   int32_t xTemp2 = (xTemp*COS_ANGLE - yTemp*SIN_ANGLE)/scale;
@@ -88,15 +82,13 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
   xTemp = xTemp2;
   yTemp = yTemp2;
 
+*/
+
   // Invert as the LCDs are upside down technically
   yTemp = lcd_height - yTemp;
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp;
-
-  Serial.print(xTemp);
-  Serial.print(", ");
-  Serial.println(yTemp);
 }
 
 void setup() {
@@ -124,101 +116,40 @@ void setup() {
 
   } while ( u8g2.nextPage() );
 
+  Serial_UART.begin(921600);
   Serial.begin(921600);
   Serial.setTimeout(100); //ms
   Serial.println("Startup");
-
-  Serial_UART.begin(921600);
-  delay(500);
-  //u8g2.clear();
-  delay(500);
 }
 
 void drawLightsOnDisplay() {
   uint16_t i = 0;
   uint16_t j = 0;
 
-  struct Light light;
-  Serial.println("Drawing!");
-  Serial.println(numLights);
+  //Serial.println("Drawing!");
+  //Serial.println(numLights);
   u8g2.clearDisplay();
 
   // Draw on LCD
   do {
     for (i = 0; i < numLights; i++) {
-      // A bit hacky, but I need rotated squares for now
       u8g2.drawDisc(lights[i].x1, lights[i].y1, lights[i].radius);
     }
-    // Draw test circles
-    for (i = 0; i < 4; i++) {
-      for (j = 0; j < 5; j++) {
-        light.x1 = 40 + i*10;
-        light.y1 = 40 + j*10;
-        light.radius = 2;
-        CameraToLCD(&light.x1, &light.y1);
-        u8g2.drawDisc(light.x1, light.y1, light.radius);
-      }
-    }
   } while ( u8g2.nextPage() );
+
+}
+
+
+int multiply(int x, int y) {
+  return x * y;
 }
 
 
 void loop() {
-  if (!Serial.available() && !Serial_UART.available()) {
-    return;
-  }
-
-  // Receive data from serial/uart
-  if (Serial.available()) {
-    tempStr[i] = Serial.read();
-    // Forward message from USB onto other display
-    Serial_UART.print(tempStr[i]);
-  } else {
-    // Receive message from serial UART
-    tempStr[i] = Serial_UART.read();
-  }
-
-  Serial.println(tempStr);
-
-  i++;
-
-  if (i >= tempStrLength) {
-    i = 0;
-    return;
-  }
-
-  // Collect data until a semicolon or 'd' (for done)
-  if (!(tempStr[i-1] == ';' || tempStr[i-1] == 'd')) {
-    return;
-  }
-
-  if (tempStr[0] == 'd' || numLights >= MAX_LIGHTS) {
-    drawLightsOnDisplay();
-    i = 0;
-    numLights = 0;
-    return;
-  }
-
-  // We have a potential new light
-  // Needs to start with a digit or newline
-  if (!(isDigit(tempStr[0]))) {
-    i = 0;
-    return;
-  }
-
-  // Add to lights
-  Serial.println("Adding to lights!");
-  strtokIndex = strtok(tempStr, " ");
-  lights[numLights].x1 = atoi(tempStr);
-  strtokIndex = strtok(NULL, " ");
-  lights[numLights].y1 = atoi(tempStr);
-  strtokIndex = strtok(NULL, ";");
-  lights[numLights].radius = atoi(strtokIndex);
-  Serial.println("Got one!");
-
-  CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
-
-  i = 0;
-  numLights++;
-  Serial.println(numLights);
+  uint16_t i = 0;
+  int16_t indexLastNewline = -1;
+  int16_t index2ndToLastNewline = -1;
+  drawLightsOnDisplay();
+  ResetString();
 }
+
