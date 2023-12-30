@@ -64,27 +64,27 @@ void setup() {
 
   //  WRITE_REG_OR_RETURN(BANK_SENSOR, CLKRC, c.clk);
   ///  WRITE_REG_OR_RETURN(BANK_DSP, R_DVP_SP, c.pclk);
-  log_printf("CLKRC: 0x%x\n", s->get_reg(s, CLKRC, 0xFFFFFFFF));
-  log_printf("BD50: 0x%x\n", s->get_reg(s, BD50, 0xFFFFFFFF));
+  //log_printf("CLKRC: 0x%x\n", s->get_reg(s, CLKRC, 0xFFFFFFFF));
+  //log_printf("BD50: 0x%x\n", s->get_reg(s, BD50, 0xFFFFFFFF));
 
 
 
 }
 
 void loop() {
-  log_printf("Start: %d\n", millis());
+  //log_printf("Start: %d\n", millis());
   camera_fb_t *fb = NULL;
   // Gets latest frame in buffer
   fb = esp_camera_fb_get();
   if (!fb) {
-    log_printf("Image not found!\n");
+    //log_printf("Image not found!\n");
   } else {
-    log_printf("Captured frame!\n");
+    //log_printf("Captured frame!\n");
   }
-  log_printf("Cam mid: %d\n", millis());
+  //log_printf("Cam mid: %d\n", millis());
 
   esp_camera_fb_return(fb);
-  log_printf("Cam end: %d\n", millis());
+  //log_printf("Cam end: %d\n", millis());
 
   //DBG_PIN_SET(0);
 
@@ -92,7 +92,7 @@ void loop() {
 
   //log_printf("Frame\n");
 
-/*
+
   uint16_t firstWhitePixelX = 0;
   uint16_t firstWhitePixelY = 0;
   uint16_t x, y = 0;
@@ -108,8 +108,6 @@ void loop() {
   }
 
 BreakLoop:
-*/
-  log_printf("Logic end: %d\n", millis());
 
   return;
 
