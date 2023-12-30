@@ -53,20 +53,16 @@ HardwareSerial Serial_UART(0);
 
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
-
-  Serial.print(*x);
-  Serial.print(", ");
-  Serial.println(*y);
-  // Rotate about center of view
   int32_t xTemp = *x;
   int32_t yTemp = *y;
-
+/*
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
   int32_t xTemp2 = (xTemp*COS_ANGLE - yTemp*SIN_ANGLE)/scale;
   int32_t yTemp2 = (xTemp*SIN_ANGLE + yTemp*COS_ANGLE)/scale;
   xTemp = xTemp2;
   yTemp = yTemp2;
+  */
 
   //yTemp = yTemp;
   // Invert left to right
@@ -74,10 +70,6 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp + 40;
-
-  Serial.print(xTemp);
-  Serial.print(", ");
-  Serial.println(yTemp);
 }
 
 void setup() {
