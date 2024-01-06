@@ -5,6 +5,20 @@
 #include <stdio.h>
 #include <HardwareSerial.h>
 
+#define max(a,b)             \
+({                           \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b;       \
+})
+
+#define min(a,b)             \
+({                           \
+    __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b;       \
+})
+
 /* Constructor */
 U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* cs=*/ 1, /* dc=*/ 3, /* reset=*/ 2);
 
@@ -21,11 +35,11 @@ U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* 
 // 10 = x offset in pixels from top left of first light
 // 20 = y offset in pixels from top left of first light
 // 50 = x ... 2nd light
-// 50 = y ... 2nd llight
-
+// 50 = y ... 2nd light
 #define MILLIS_PER_DRAW (1000/30)
 #define LIGHT_RADIUS 6
-#define MIN_NUM_CHARS 10
+const char ExpectedStringChars[] = "000 000 ";
+#define STR_BUFFER_LENGTH (sizeof(ExpectedStringChars) + 1)
 
 uint8_t numLights = 0;
 #define MAX_LIGHTS 15
@@ -53,8 +67,8 @@ HardwareSerial Serial_UART(0);
 
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
-  int32_t xTemp = *x;
-  int32_t yTemp = *y;
+  int32_t xTemp = *x + 20;
+  int32_t yTemp = *y + 80;
 /*
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
@@ -69,7 +83,7 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
   xTemp = lcd_width - xTemp;
 
   *x = (uint16_t)xTemp;
-  *y = (uint16_t)yTemp + 40;
+  *y = (uint16_t)yTemp;
 }
 
 void setup() {
@@ -84,7 +98,7 @@ void setup() {
   u8g2.firstPage();
   do {
 #ifdef LCD_RIGHT
-    u8g2.drawDisc(60,60,10);
+    u8g2.drawDisc(60,60,LIGHT_RADIUS);
 #else
     u8g2.drawBox(20,85,20,20);
 #endif
@@ -101,12 +115,17 @@ void setup() {
   delay(500);
 }
 
+unsigned long timeStartDraw = 0;
 void drawLightsOnDisplay() {
+  // Currently 100ms to draw...seems too much. Weird!
   uint16_t i = 0;
   uint16_t j = 0;
+  timeStartDraw = millis();
 
   u8g2.clearBuffer();
+  Serial.printf("Clear buf: %d\n", millis() - timeStartDraw);
   u8g2.firstPage();
+  Serial.printf("First page: %d\n", millis() - timeStartDraw);
 
   // Draw on LCD
   do {
@@ -115,55 +134,80 @@ void drawLightsOnDisplay() {
       u8g2.drawDisc(lights[i].x1, lights[i].y1, lights[i].radius);
     }
   } while ( u8g2.nextPage() );
+  Serial.printf("Last page: %d\n", millis() - timeStartDraw);
   numLights = 0;
 }
 
 
-unsigned long previousDrawMillis = 0;
+char lightSerial[STR_BUFFER_LENGTH];
+uint8_t lightSerialIndex = 0;
+
+void ResetString() {
+  lightSerialIndex = 0;
+  memset(lightSerial, 0, STR_BUFFER_LENGTH);
+}
+
+uint8_t i = 0;
 void loop() {
 
-  char lightSerial[25];
-  uint8_t lightSerialIndex = 0;
   char * token;
-
-
-  if (millis() - previousDrawMillis > MILLIS_PER_DRAW) {
-    drawLightsOnDisplay();
-    previousDrawMillis = millis();
-  }
-
-  // TODO: Turn into an event instead of loop
   uint16_t numBytesToRead = Serial_UART.available();
-  // Want at least one total sequence
-  if (numBytesToRead < MIN_NUM_CHARS) {
+  //Serial.printf("ToRead: %d, Index: %d\n", numBytesToRead, lightSerialIndex);
+
+  if (numBytesToRead == 0) {
+    if (numLights > 0) {
+      //Serial.println("Drawing");
+
+
+      drawLightsOnDisplay();
+      //numLights = 0;
+
+
+
+    }
     return;
   }
 
-  // The below is probably not that efficient (reading one byte at a time)
-  // but it is simple and readable!
+  // TODO: Turn into an event instead of loop? (sleep in between)
 
-  // Get a known starting sequence, the previous light's newline.
-  // Unlikely to happen other than at startup
-  while (Serial_UART.peek() != '\n') {
-    Serial_UART.read();
-  }
-  // Just in case when testing I forget the starting newline...
-  numBytesToRead = Serial_UART.available();
-  if (numBytesToRead < MIN_NUM_CHARS) {
-    return;
-  }
+  while (1) {
+    if (lightSerialIndex >= STR_BUFFER_LENGTH) {
+      // Probably garbage when first plugging in. Let's reset the string
+      Serial.printf("lightSerialIndex >= %d\n", STR_BUFFER_LENGTH);
+      ResetString();
+      return;
+    }
 
-  // But don't want this newline, skip over it
-  Serial_UART.read();
+    if (Serial_UART.peek() == '\n') {
+      // Consume newline but don't use it
+      Serial_UART.read();
+      break;
+    }
 
-  // Read up to but not including the next newline
-  while (Serial_UART.peek() != '\n') {
-    lightSerial[lightSerialIndex] = Serial_UART.read();
+    Serial_UART.read(&lightSerial[lightSerialIndex], 1);
     lightSerialIndex++;
-  }
-  lightSerial[lightSerialIndex] = '\0';
-  lightSerialIndex++;
+    numBytesToRead--;
 
+    if (numBytesToRead == 0) {
+      return;
+    }
+  }
+  // Now we have line previously terminated by a newline character
+
+  // Validate string matches expected string chars
+  for (i = 0; i < sizeof(ExpectedStringChars); i++) {
+    if ((ExpectedStringChars[i] == '0' && (lightSerial[i] > '9' || lightSerial[i] < '0')) ||
+        (ExpectedStringChars[i] == ' ' && lightSerial[i] != ' ')) {
+      ResetString();
+      return;
+    }
+  }
+
+  Serial.println("Parsing string");
+
+  // So now we have a valid line. Let's parse it!
+  // Add null just in case
+  lightSerial[STR_BUFFER_LENGTH-1] = '\0';
   //Serial.printf("lightSerial: %s\n", lightSerial);
 
   // Only process one "light" and return through the loop
@@ -172,7 +216,10 @@ void loop() {
   token = strtok(NULL, " ");
   lights[numLights].y1 = atoi(token);
   lights[numLights].radius = LIGHT_RADIUS;
-  // Serial.printf("Light: %d %d\n", lights[numLights].x1, lights[numLights].y1 );
+  Serial.printf("Light_cam: %d %d\n", lights[numLights].x1, lights[numLights].y1 );
   CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
+  Serial.printf("Light_lcd: %d %d\n", lights[numLights].x1, lights[numLights].y1 );
   numLights++;
+
+  ResetString();
 }

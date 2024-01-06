@@ -36,13 +36,14 @@ void setup() {
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 24000000; // Matters!
-  config.frame_size = FRAMESIZE_96X96; //FRAMESIZE_QQVGA Matters!
+  config.xclk_freq_hz = 10000000; // Matters! 24Mhz is finicky...
+  config.frame_size = FRAMESIZE_QQVGA; //FRAMESIZE_QQVGA Matters!
   // Crashes when in jpeg
-  config.pixel_format = PIXFORMAT_GRAYSCALE; // for processing
+  config.pixel_format = PIXFORMAT_GRAYSCALE; // for easier/faster processing. Done on CPU side by skipping over UV of YUV
+  // JPEG wants frame size of 4:3 to work. However, even on 160X120 (QQVGA) it's still a max of only 25 FPS
   config.grab_mode = CAMERA_GRAB_LATEST; // doesn't matter
-  config.fb_location = CAMERA_FB_IN_DRAM; // doesn't really matter
-  config.jpeg_quality = 0;
+  config.fb_location = CAMERA_FB_IN_DRAM; // surprisingly doesn't matter, dram vs psram
+  config.jpeg_quality = 63;
   config.fb_count = 2;
 
   // Try CAMERA_FB_IN_PSRAM and CIF again. Maybe it's not actually transferring
@@ -61,6 +62,13 @@ void setup() {
   // Although....maybe auto exposure is close to how eye would work? For a simple algorithm. Worth testing in a dark and light room and with some low background light like your car headlights pointed out.
   s->set_exposure_ctrl(s, 0);
   s->set_aec_value(s, 0);
+  // Play with lower CLK divisions. Default is 0x3 in normal app
+  // Could change this in the ov2640_settings.h startup sequence, ov2640_settings_to_cif
+  // 50 FPS! But get this error:
+  s->set_reg(s, 0x100 | CLKRC, 0x3F, 0x0);
+
+  //s->set_reg(s, 0x100 | REG32, 0xFF, REG32_SVGA); // Turn off clock divider
+
 
   //  WRITE_REG_OR_RETURN(BANK_SENSOR, CLKRC, c.clk);
   ///  WRITE_REG_OR_RETURN(BANK_DSP, R_DVP_SP, c.pclk);
@@ -71,7 +79,9 @@ void setup() {
 
 }
 
+unsigned long startMillis = 0;
 void loop() {
+  startMillis = millis();
   //log_printf("Start: %d\n", millis());
   camera_fb_t *fb = NULL;
   // Gets latest frame in buffer
@@ -101,13 +111,15 @@ void loop() {
       if (fb->buf[x + y*fb->width] == 255) {
         firstWhitePixelX = x;
         firstWhitePixelY = y;
-        log_printf("%d %d \n", firstWhitePixelX, firstWhitePixelY);
+        log_printf("%03d %03d \n", firstWhitePixelX, firstWhitePixelY);
+
         goto BreakLoop;
       }
     }
   }
 
 BreakLoop:
+  //log_printf("MS: %d, FPS: %d\n", (millis() - startMillis), 1000/(millis() - startMillis));
 
   return;
 
