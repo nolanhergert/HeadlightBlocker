@@ -19,6 +19,7 @@
 #include "esp32-hal-ledc.h"
 #include "sdkconfig.h"
 #include "camera_index.h"
+#include <Arduino.h>
 
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
@@ -517,6 +518,8 @@ static esp_err_t capture_handler(httpd_req_t *req)
 #endif
 }
 
+unsigned long lastMillis = 0;
+
 static esp_err_t stream_handler(httpd_req_t *req)
 {
     camera_fb_t *fb = NULL;
@@ -592,6 +595,8 @@ static esp_err_t stream_handler(httpd_req_t *req)
                       firstWhitePixelX = x;
                       firstWhitePixelY = y;
                       log_printf("%d %d;\n", firstWhitePixelX, firstWhitePixelY);
+                      log_printf("FPS: %d\n", 1000/(millis() - lastMillis));
+                      lastMillis = millis();
                       goto BreakLoop;
                     }
                 }
