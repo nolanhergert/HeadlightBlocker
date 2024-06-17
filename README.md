@@ -12,16 +12,17 @@ View of Dyneye blocking sun: https://www.youtube.com/watch?v=PTG62q7hMcY
 ## Justification
   * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
      * It's painful for your eyes to over expose and desperately shrink iris
-     * It takes time for your eyes to dilate again
-  * NHSTA dataset: [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
+     * It takes time for your eyes to dilate again, especially if you are older.
+  * NHSTA dataset (what does it say??): [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
 
 ## Target Customers
+  * All-day drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor but still need to see details
   * Nighttime driving in the countryside, there are occasional glaring headlights and no streetlights to keep your pupils constricted. Causes pain and potentially very dangerous whiteout for multiple seconds. Try it yourself at nighttime / a dark room with your phone LED pointed at your eyes!
-    * Especially a problem in India, where drivers use high beams a lot and there are potholes, people crossing, etc. However budget is a lot less than USA.
+    * Especially a problem in India, where drivers use high beams a lot and there are potholes, people crossing, etc. However budget and quality requirements are a lot less than USA.
     * Problem is also worse with older drivers (pupils don't re-dilate quickly) and those with astigmatism and other visual problems (glare "halo" is even wider and more distracting)
-    * Tall trucks/SUVs with high headlights still need to see too! But suffers for sedan drivers.
-  * Drivers/motorcycle/bicyclists/pilots either going into the morning/evening sun and can't use a sun visor but still need to see details
-  * 
+    * Tall trucks/SUVs with high headlights still need to see the road too! But cause much suffering for sedan drivers.
+    * Drivers of tall vehicles (trucks) still suffer from people using high beams even though they are high up.
+  
     
 
 ### Stretch Customers
