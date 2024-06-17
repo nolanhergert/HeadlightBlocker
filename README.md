@@ -3,7 +3,7 @@ Are you like tons of people annoyed with bright lights in the evening hurting yo
 
 There's an *actual* solution for this, here are some demo videos from a previous startup:
 
-https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels
+https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels
 
 View of Dyneye prototype: http://www.youtube.com/watch?v=cSOoYN_iOBY
 
