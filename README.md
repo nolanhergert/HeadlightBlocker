@@ -15,6 +15,7 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
   * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
      * It's painful for your rods/cones to over expose. Since the light source is small, usually your iris won't dilate much either.
      * It takes time for your eyes to dilate again, especially if you are older.
+  * "Can’t comment on other parts of the country, but in California it’s pretty much mandatory to wear sunglasses during sunny days. Which is most of them. The concrete is white and quite blinding in the sunlight. I keep spares in the car just incase, simply can’t drive without them."
   * NHSTA dataset (what does it say??): [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
 
 ## Target Customers
