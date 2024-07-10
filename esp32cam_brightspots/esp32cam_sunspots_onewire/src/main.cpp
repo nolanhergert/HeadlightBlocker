@@ -44,7 +44,7 @@ void setup() {
   config.grab_mode = CAMERA_GRAB_LATEST; // doesn't matter
   config.fb_location = CAMERA_FB_IN_DRAM; // surprisingly doesn't matter, dram vs psram
   config.jpeg_quality = 63;
-  config.fb_count = 2;
+  config.fb_count = 2; // Try one instead of 2?
 
   // Try CAMERA_FB_IN_PSRAM and CIF again. Maybe it's not actually transferring
 

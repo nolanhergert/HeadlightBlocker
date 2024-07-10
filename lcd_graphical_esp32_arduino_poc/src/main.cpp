@@ -37,7 +37,7 @@ U8G2_ST7571_128X128_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 12, /* data=*/ 13, /* 
 // 50 = x ... 2nd light
 // 50 = y ... 2nd light
 #define MILLIS_PER_DRAW (1000/30)
-#define LIGHT_RADIUS 6
+#define LIGHT_RADIUS 4 // pixels
 const char ExpectedStringChars[] = "000 000 ";
 #define STR_BUFFER_LENGTH (sizeof(ExpectedStringChars) + 1)
 
@@ -67,8 +67,9 @@ HardwareSerial Serial_UART(0);
 
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
-  int32_t xTemp = *x + 20;
-  int32_t yTemp = *y + 80;
+  // Invert x too
+  uint32_t xTemp = ((-(*x) + 110) / 5) * 5;
+  uint32_t yTemp = ((*y + 75) / 5) * 5;
 /*
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
@@ -78,9 +79,6 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
   yTemp = yTemp2;
   */
 
-  //yTemp = yTemp;
-  // Invert left to right
-  xTemp = lcd_width - xTemp;
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp;
@@ -98,7 +96,7 @@ void setup() {
   u8g2.firstPage();
   do {
 #ifdef LCD_RIGHT
-    u8g2.drawDisc(60,60,LIGHT_RADIUS);
+    u8g2.drawDisc(20,120,LIGHT_RADIUS);
 #else
     u8g2.drawBox(20,85,20,20);
 #endif
@@ -216,9 +214,9 @@ void loop() {
   token = strtok(NULL, " ");
   lights[numLights].y1 = atoi(token);
   lights[numLights].radius = LIGHT_RADIUS;
-  Serial.printf("Light_cam: %d %d\n", lights[numLights].x1, lights[numLights].y1 );
+  Serial.printf("Light: %d %d -> ", lights[numLights].x1, lights[numLights].y1 );
   CameraToLCD(&lights[numLights].x1, &lights[numLights].y1);
-  Serial.printf("Light_lcd: %d %d\n", lights[numLights].x1, lights[numLights].y1 );
+  Serial.printf("%d %d\n", lights[numLights].x1, lights[numLights].y1 );
   numLights++;
 
   ResetString();
