@@ -1,5 +1,5 @@
 # HeadlightBlocker
-Are you like tons of people annoyed with bright lights in the evening hurting your eyes? Nice video: https://www.youtube.com/watch?v=w0nBlZwUT3s
+Are you like tons of people annoyed with the sun or headlights hurting your eyes? Nice video: https://www.youtube.com/watch?v=w0nBlZwUT3s
 
 There's an *actual* solution for this, here are some demo videos from a **previous startup** that went under, DynEye:
 
