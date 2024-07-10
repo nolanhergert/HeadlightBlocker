@@ -79,6 +79,17 @@ void CameraToLCD(uint16_t *x, uint16_t *y)
   yTemp = yTemp2;
   */
 
+/*
+  Trying to do fast dewarping...
+    * Transform to (r,theta) space with a center.
+      * Center determination could be with 4 corner points
+      * Warping on (r) should be independent of theta, so just need to gather dewarping points on one radial and compute dewarping for r and not theta.
+      * Could just do a few piecewise linear interpolations, or maybe add spline
+      * Pre-compute a 2D lookup table in x and y (based on (r,theta)) and then do linear interpolation in between the points in x and y. That'll work
+      * Or if you need to compute real r, can do r^2 only and not sqrt. Or look up efficient hypot like these: https://stackoverflow.com/questions/3506404/fast-hypotenuse-algorithm-for-embedded-processor
+ 
+*/
+
 
   *x = (uint16_t)xTemp;
   *y = (uint16_t)yTemp;
