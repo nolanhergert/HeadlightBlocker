@@ -22,35 +22,34 @@
     const rows = 30;  // Number of rows in the display
     const cols = 30;  // Number of columns in the display
     const pixelSize = 10;  // Size of each pixel in the display
-    const RC_cap = 0.01;  // RC filter time constant for capacitive voltage
-    const RC_brightness = 0.2;  // RC filter time constant for brightness/transparency of liquid crystal
-    const dt = 0.01;  // Time step for updates
-    var time = 0;
+    const RC_liquid_crystal = 0.2;  // RC filter time constant for brightness/transparency of liquid crystal
+    var ticks = 0;
 
     // 2D array to store pixel voltages
-    let pixelVoltages = Array(rows).fill().map(() => Array(cols).fill(0));
+    let pixelRMSVoltages = Array(rows).fill().map(() => Array(cols).fill(0));
     let pixelBrightnesses = Array(rows).fill().map(() => Array(cols).fill(1));
 
     // Canvas setup
     const canvas = document.getElementById('lcdCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Function to map voltage to RMV voltage to transmittance (pixel darkness)
-    function mapVoltageToBrightness(voltage) {
+    // Function to map RMS voltage to transmittance (pixel "brightness")
+    function mapVoltageToBrightness(RMSVoltage) {
       // Roughly correct with crossover voltage of 2V
-      return Math.max(0, Math.min(1, -5 * Math.sqrt(voltage * voltage) + 10.5));
+      return Math.max(0, Math.min(1, -25 * RMSVoltage + 50.5));
     }
 
     // Function to simulate RC filter for voltage updates
     function updatePixelVoltage(row, col, rowVoltage, colVoltage) {
-      const previousVoltage = pixelVoltages[row][col];
+      const previousVoltage = pixelRMSVoltages[row][col];
       const targetVoltage = rowVoltage - colVoltage;
       // RC filter equation: newV = prevV + (targetV - prevV) * (dt / RC)
-      pixelVoltages[row][col] = previousVoltage + (targetVoltage - previousVoltage) * (dt / RC_cap);
-      pixelBrightnesses[row][col] = pixelBrightnesses[row][col] + (mapVoltageToBrightness(pixelVoltages[row][col]) - pixelBrightnesses[row][col]) * (dt / RC_brightness);
+      pixelRMSVoltages[row][col] = pixelRMSVoltages[row][col] + (Math.sqrt(targetVoltage * targetVoltage) - pixelRMSVoltages[row][col]) * (RC_liquid_crystal);
 
-      if (row == 5) {
+      if (row == 5 && col == 0) {
         // Do nothing
+
+        console.log(previousVoltage, targetVoltage, pixelRMSVoltages[row][col]);//, pixelBrightnesses[row][col]);
         Function.prototype();
       }
     }
@@ -59,7 +58,10 @@
     function drawDisplay() {
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
-          const rgb_brightness = Math.floor(pixelBrightnesses[row][col] * 255);
+          const rgb_brightness = Math.floor(mapVoltageToBrightness(pixelRMSVoltages[row][col]) * 255);
+          if (row == 5 && col < 5 && rgb_brightness < 128) {
+            Function.prototype();
+          }
           if (row == 5) {
             // Do nothing
             Function.prototype();
@@ -71,7 +73,7 @@
     }
 
     // Function to simulate the addressing of the LCD display
-    function simulateAddressing(time) {
+    function simulateAddressing(ticks) {
       // Update each pixel based on its row and column addressing voltages
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -79,12 +81,12 @@
           var colVoltage = 0;
 
           if (row == 5) {
-            if (Math.trunc(time * 100) % 2 == 0) {
+            if (ticks % 2 == 0) {
               rowVoltage = 3.3;
             }
           }
           if (col == 5) {
-            if (Math.trunc(time * 100) % 2 == 1) {
+            if (ticks % 2 == 1) {
               colVoltage = 3.3;
             }
           }
@@ -102,10 +104,9 @@
 
     // Main loop to continuously update the display
     function mainLoop() {
-      simulateAddressing(time);
-      console.log(pixelBrightnesses[6][5]);
+      simulateAddressing(ticks);
       requestAnimationFrame(mainLoop);
-      time += dt;
+      ticks++;
     }
 
     // Start the simulation
