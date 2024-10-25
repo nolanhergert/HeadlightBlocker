@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCD Display Emulator</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">LCD Display Emulator</h1>
+    <canvas id="lcdCanvas" width="300" height="300"></canvas>
+
+    <script>
+        const rows = 30;  // Number of rows in the display
+        const cols = 30;  // Number of columns in the display
+        const pixelSize = 10;  // Size of each pixel in the display
+        const RC = 0.02;  // RC filter time constant
+        const dt = 0.01;  // Time step for updates
+		var time = 0;
+
+        // 2D array to store pixel voltages
+        let pixelVoltages = Array(rows).fill().map(() => Array(cols).fill(0));
+
+        // Canvas setup
+        const canvas = document.getElementById('lcdCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Function to simulate RC filter for voltage updates
+        function updatePixelVoltage(row, col, rowVoltage, colVoltage) {
+            const previousVoltage = pixelVoltages[row][col];
+            const targetVoltage = rowVoltage - colVoltage;
+            // RC filter equation: newV = prevV + (targetV - prevV) * (dt / RC)
+            const newVoltage = previousVoltage + (targetVoltage - previousVoltage) * (dt / RC);
+            pixelVoltages[row][col] = newVoltage;
+			if (row == 5) {
+				// Do nothing
+				Function.prototype();
+			}
+        }
+
+        // Function to calculate RMS voltage from pixel voltage
+        function calculateRMSVoltage(voltage) {
+            return Math.sqrt(voltage * voltage);
+        }
+
+        // Function to map RMS voltage to transmittance (pixel darkness)
+        function mapVoltageToDarkness(rmsVoltage) {
+			// Roughly correct with crossover voltage of 2V
+			const transmittance = Math.max(0, Math.min(1, -5 * rmsVoltage +10.5));
+            return Math.floor(transmittance * 255);  // Return value for pixel brightness (0-255)
+        }
+
+        // Function to draw the LCD display
+        function drawDisplay() {
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const rmsVoltage = calculateRMSVoltage(pixelVoltages[row][col]);
+                    const darkness = mapVoltageToDarkness(rmsVoltage);
+					if (row == 5) {
+						// Do nothing
+						Function.prototype();
+					}
+                    ctx.fillStyle = `rgb(${darkness}, ${darkness}, ${darkness})`;
+                    ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        }
+
+        // Function to simulate the addressing of the LCD display
+        function simulateAddressing(time) {
+            // Update each pixel based on its row and column addressing voltages
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+					var rowVoltage = 0;
+				    var colVoltage = 0;
+					
+					if (row == 5) {
+						if (Math.trunc(time * 100 / 4) % 2 == 0) {
+							rowVoltage = 3.3;
+						}
+					}
+					if (col == 5) {
+						if (Math.trunc(time * 100 / 4) % 2 == 1) {
+							colVoltage = 3.3;
+						}
+					}					
+					
+					if (row == 5) {
+						// Do nothing
+						Function.prototype();
+					}
+                    updatePixelVoltage(row, col, rowVoltage, colVoltage);
+                }
+            }
+
+            drawDisplay();
+        }
+
+        // Main loop to continuously update the display
+        function mainLoop() {
+            simulateAddressing(time);
+			console.log(pixelVoltages[5][5]);
+            requestAnimationFrame(mainLoop);
+			time += dt;
+        }
+
+        // Start the simulation
+        mainLoop();
+    </script>
+</body>
+</html>
