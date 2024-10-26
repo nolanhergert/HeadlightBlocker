@@ -22,12 +22,23 @@
     const rows = 30;  // Number of rows in the display
     const cols = 30;  // Number of columns in the display
     const pixelSize = 10;  // Size of each pixel in the display
-    const RC_liquid_crystal = 0.2;  // RC filter time constant for brightness/transparency of liquid crystal
-    var ticks = 0;
+    const trace_RC_trace = 1;
+    // Let's say it takes 5ms to come to full darkness at RMS of 2.2V, 2/3 of 3.3V, kind of hard to measure unless using led / photodiode, which don't want to set up right now
+    // So RMS window needs to be ... 7.5ms.
+    const RMS_window_us = 7500;
+    var microseconds = 0;
+    // I measure 20us for voltage to settle on trace wires going into board. Don't want to deal with sub-tick stuff yet
+    const tick_size_us = 50;
+    // Mean squared
+    const pixelSquareEntriesCount = RMS_window_us / tick_size_us;
+    // Need a circular buffer
+    var pixelSquareEntriesIndex = 0;
+
 
     // 2D array to store pixel voltages
+    let pixelSquareEntries = Array(rows).fill().map(() => Array(cols).fill(0).map(() => Array(pixelSquareEntriesCount).fill(0)));
+    let pixelMeans = Array(rows).fill().map(() => Array(cols).fill(0));
     let pixelRMSVoltages = Array(rows).fill().map(() => Array(cols).fill(0));
-    let pixelBrightnesses = Array(rows).fill().map(() => Array(cols).fill(1));
 
     // Canvas setup
     const canvas = document.getElementById('lcdCanvas');
@@ -36,20 +47,21 @@
     // Function to map RMS voltage to transmittance (pixel "brightness")
     function mapVoltageToBrightness(RMSVoltage) {
       // Roughly correct with crossover voltage of 2V
-      return Math.max(0, Math.min(1, -25 * RMSVoltage + 50.5));
+      return Math.max(0, Math.min(1, -2.5 * RMSVoltage + 5.5));
     }
 
     // Function to simulate RC filter for voltage updates
     function updatePixelVoltage(row, col, rowVoltage, colVoltage) {
-      const previousVoltage = pixelRMSVoltages[row][col];
-      const targetVoltage = rowVoltage - colVoltage;
-      // RC filter equation: newV = prevV + (targetV - prevV) * (dt / RC)
-      pixelRMSVoltages[row][col] = pixelRMSVoltages[row][col] + (Math.sqrt(targetVoltage * targetVoltage) - pixelRMSVoltages[row][col]) * (RC_liquid_crystal);
+      const nextSquaredEntry = (rowVoltage - colVoltage) * (rowVoltage - colVoltage);
+      pixelMeans[row][col] = pixelMeans[row][col] + ((nextSquaredEntry) - pixelSquareEntries[row][col][pixelSquareEntriesIndex])/pixelSquareEntriesCount;
+      pixelRMSVoltages[row][col] = Math.sqrt(pixelMeans[row][col]);
+      pixelSquareEntries[row][col][pixelSquareEntriesIndex] = nextSquaredEntry;
+
 
       if (row == 5 && col == 0) {
         // Do nothing
 
-        console.log(previousVoltage, targetVoltage, pixelRMSVoltages[row][col]);//, pixelBrightnesses[row][col]);
+        console.log(pixelSquareEntriesIndex, nextSquaredEntry, pixelMeans[row][col], pixelRMSVoltages[row][col]);//, pixelBrightnesses[row][col]);
         Function.prototype();
       }
     }
@@ -73,7 +85,7 @@
     }
 
     // Function to simulate the addressing of the LCD display
-    function simulateAddressing(ticks) {
+    function simulateAddressing(microseconds) {
       // Update each pixel based on its row and column addressing voltages
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -81,13 +93,13 @@
           var colVoltage = 0;
 
           if (row == 5) {
-            if (ticks % 2 == 0) {
-              rowVoltage = 3.3;
+            if (Math.floor(microseconds / 300) % 2 == 0) {
+              rowVoltage = 2.7;
             }
           }
           if (col == 5) {
-            if (ticks % 2 == 1) {
-              colVoltage = 3.3;
+            if (Math.floor(microseconds / 300) % 2 == 1) {
+              colVoltage = 2.7;
             }
           }
 
@@ -104,9 +116,10 @@
 
     // Main loop to continuously update the display
     function mainLoop() {
-      simulateAddressing(ticks);
+      simulateAddressing(microseconds);
       requestAnimationFrame(mainLoop);
-      ticks++;
+      microseconds += tick_size_us;
+      pixelSquareEntriesIndex = (pixelSquareEntriesIndex + 1) % pixelSquareEntriesCount;
     }
 
     // Start the simulation
