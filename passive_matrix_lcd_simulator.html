@@ -22,7 +22,11 @@
     const rows = 30;  // Number of rows in the display
     const cols = 30;  // Number of columns in the display
     const pixelSize = 10;  // Size of each pixel in the display
-    const trace_RC_trace = 1;
+    // Liquid crystal values
+    const maxTransparentVoltage = 1.9;
+    const minOpaqueVoltage = 2.1;
+    const lcdOpacitySlope = (0-1)/(minOpaqueVoltage-maxTransparentVoltage);
+    const lcdOpacityIntercept = -lcdOpacitySlope * minOpaqueVoltage;
     // Let's say it takes 5ms to come to full darkness at RMS of 2.2V, 2/3 of 3.3V, kind of hard to measure unless using led / photodiode, which don't want to set up right now
     // So RMS window needs to be ... 7.5ms.
     const RMS_window_us = 7500;
@@ -47,7 +51,7 @@
     // Function to map RMS voltage to transmittance (pixel "brightness")
     function mapVoltageToBrightness(RMSVoltage) {
       // Roughly correct with crossover voltage of 2V
-      return Math.max(0, Math.min(1, -2.5 * RMSVoltage + 5.5));
+      return Math.max(0, Math.min(1, lcdOpacitySlope * RMSVoltage + lcdOpacityIntercept));
     }
 
     // Function to simulate RC filter for voltage updates
@@ -93,13 +97,13 @@
           var colVoltage = 0;
 
           if (row == 5) {
-            if (Math.floor(microseconds / 300) % 2 == 0) {
-              rowVoltage = 2.7;
+            if (Math.floor(microseconds / 5000) % 2 == 0) {
+              rowVoltage = 2.2;
             }
           }
           if (col == 5) {
-            if (Math.floor(microseconds / 300) % 2 == 1) {
-              colVoltage = 2.7;
+            if (Math.floor(microseconds / 5000) % 2 == 1) {
+              colVoltage = 2.2;
             }
           }
 
@@ -110,16 +114,27 @@
           updatePixelVoltage(row, col, rowVoltage, colVoltage);
         }
       }
-
-      drawDisplay();
     }
+/*
+    function theAlgorithm(maxTransparentVoltage, minOpaqueVoltage, temperature, RMS_window_us, desiredOpacitiesArray) {
+      // Given various constants and an array of desired opacities, emit a list of
+      // (timestamp_us, rows, cols)
+      // for a scheduler to work with that minimizes power drawn and does not exhibit ghosting behavior
+
+      // Find matching columns
+    }
+    */
 
     // Main loop to continuously update the display
     function mainLoop() {
-      simulateAddressing(microseconds);
+      const loopIterations = 1; //slow motion ... 16000 / tick_size_us; // 16000 ms = 60 fps
+      for (let i = 0; i < loopIterations; i++) {
+        simulateAddressing(microseconds);
+        microseconds += tick_size_us;
+        pixelSquareEntriesIndex = (pixelSquareEntriesIndex + 1) % pixelSquareEntriesCount;
+      }
+      drawDisplay();
       requestAnimationFrame(mainLoop);
-      microseconds += tick_size_us;
-      pixelSquareEntriesIndex = (pixelSquareEntriesIndex + 1) % pixelSquareEntriesCount;
     }
 
     // Start the simulation

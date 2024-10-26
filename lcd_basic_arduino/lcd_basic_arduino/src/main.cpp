@@ -51,10 +51,12 @@ void setup() {
 
 // the loop function runs over and over again forever
 #define MIN_LCD_US_SWITCH (1000000/(121)/2)
+uint32_t lcd_on_time_us = 0;
+uint32_t lcd_on_time_us_increment = 50;
 void loop() {
 
   // Basic setup, 100% duty cycle
-
+/*
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
   delayMicroseconds(20);
@@ -62,24 +64,28 @@ void loop() {
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, LOW);
   delayMicroseconds(20);
-/*
+  */
   // Characterize the RC time constant of things...
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(1000000);
+  delayMicroseconds(50000);
 
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(5000);
+  delayMicroseconds(lcd_on_time_us);
 
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(1000000);
+  delayMicroseconds(50000);
 
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(5000);
-  */
+  delayMicroseconds(lcd_on_time_us);
+
+  lcd_on_time_us = (lcd_on_time_us + lcd_on_time_us_increment) % 6000;
+  Serial.println(lcd_on_time_us);
+
+
 
   // Try to dim at the same time as 60Hz lighting. 50% duty cycle
   /*
