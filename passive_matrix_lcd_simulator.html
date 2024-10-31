@@ -19,8 +19,8 @@
   <canvas id="lcdCanvas" width="300" height="300"></canvas>
 
   <script>
-    const rows = 30;  // Number of rows in the display
-    const cols = 30;  // Number of columns in the display
+    const numRows = 30;  // Number of rows in the display
+    const numCols = 30;  // Number of columns in the display
     const pixelSize = 10;  // Size of each pixel in the display
     // Liquid crystal values
     const maxTransparentVoltage = 1.9;
@@ -40,9 +40,9 @@
 
 
     // 2D array to store pixel voltages
-    let pixelSquareEntries = Array(rows).fill().map(() => Array(cols).fill(0).map(() => Array(pixelSquareEntriesCount).fill(0)));
-    let pixelMeans = Array(rows).fill().map(() => Array(cols).fill(0));
-    let pixelRMSVoltages = Array(rows).fill().map(() => Array(cols).fill(0));
+    let pixelSquareEntries = Array(numRows).fill().map(() => Array(numCols).fill(0).map(() => Array(pixelSquareEntriesCount).fill(0)));
+    let pixelMeans = Array(numRows).fill().map(() => Array(numCols).fill(0));
+    let pixelRMSVoltages = Array(numRows).fill().map(() => Array(numCols).fill(0));
 
     // Canvas setup
     const canvas = document.getElementById('lcdCanvas');
@@ -72,8 +72,8 @@
 
     // Function to draw the LCD display
     function drawDisplay() {
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < numRows; row++) {
+        for (let col = 0; col < numCols; col++) {
           const rgb_brightness = Math.floor(mapVoltageToBrightness(pixelRMSVoltages[row][col]) * 255);
           if (row == 5 && col < 5 && rgb_brightness < 128) {
             Function.prototype();
@@ -91,8 +91,8 @@
     // Function to simulate the addressing of the LCD display
     function simulateAddressing(microseconds) {
       // Update each pixel based on its row and column addressing voltages
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < numRows; row++) {
+        for (let col = 0; col < numCols; col++) {
           var rowVoltage = 0;
           var colVoltage = 0;
 
@@ -115,15 +115,66 @@
         }
       }
     }
-/*
+
+    /*
+    function ColumnsMatch(column1, column2) {
+      if (column1.length !== column2.length) {
+        return false; // Arrays must have the same length
+      }
+
+      for (let i = 0; i < column1.length; i++) {
+        if (column1[i] !== column2[i]) {
+          return false; // Values differ
+        }
+      }
+
+      return true; // Columns are identical
+    }
+
     function theAlgorithm(maxTransparentVoltage, minOpaqueVoltage, temperature, RMS_window_us, desiredOpacitiesArray) {
       // Given various constants and an array of desired opacities, emit a list of
       // (timestamp_us, rows, cols)
       // for a scheduler to work with that minimizes power drawn and does not exhibit ghosting behavior
-
+      const lcdUpdates = [];
       // Find matching columns
+      for (let i = 1; i < numCols; i++) {
+        if ()
+
+        lcdUpdates.push({rows: rows, cols: cols, timestampUs:timestampUs});
+
+
+      }
+
+      // Hopefully we can return a local variable like this!
+      return lcdUpdates;
+
+      // TODO: Localized  Don't focus on grayscale just yet
     }
-    */
+
+    function evaluateZeroMean(list_of_rows_cols_time_data) {
+    const MicrosecondsInOne30FPSFrame = 33333; // We need to have zero mean within a reasonable time scale
+    const AllowableDeviationWeightedSum = 10;
+    let pixelMeans = Array(numRows).fill().map(() => Array(numCols).fill(0));
+    let pixelWeightedSum = 0;
+    let microsecondsSum = 0;
+    for row in rows:
+      for col in cols:
+        for entry in list:
+          if (microsecondsSum > MicrosecondsInOne30FPSFrame) break;
+          pixelWeightedSum += (entry.cols[col] - entry.rows[row]) * entry.microseconds;
+        }
+
+        if (Math.abs(pixelWeightedSum) > AllowableDeviationWeightedSum) {
+          // ERROR
+
+        }
+
+
+
+    }
+*/
+
+
 
     // Main loop to continuously update the display
     function mainLoop() {
