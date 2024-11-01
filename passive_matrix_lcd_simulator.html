@@ -27,7 +27,9 @@
     const minOpaqueVoltage = 2.1;
     const lcdOpacitySlope = (0-1)/(minOpaqueVoltage-maxTransparentVoltage);
     const lcdOpacityIntercept = -lcdOpacitySlope * minOpaqueVoltage;
-    // Let's say it takes 5ms to come to full darkness at RMS of 2.2V, 2/3 of 3.3V, kind of hard to measure unless using led / photodiode, which don't want to set up right now
+    // Real measurement on full lens LCD is 10ms to come to full darkness from transparent and ~30ms to return to full transparency. Ummm...fascinating!
+    // How would I model that...
+    // Let's say it takes 5ms to come to full darkness at RMS of 2.2V, 2/3 of 3.3V,
     // So RMS window needs to be ... 7.5ms.
     const RMS_window_us = 7500;
     var microseconds = 0;

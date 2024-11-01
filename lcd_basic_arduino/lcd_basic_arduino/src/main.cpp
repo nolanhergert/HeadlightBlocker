@@ -52,7 +52,7 @@ void setup() {
 // the loop function runs over and over again forever
 #define MIN_LCD_US_SWITCH (1000000/(121)/2)
 uint32_t lcd_on_time_us = 0;
-uint32_t lcd_on_time_us_increment = 50;
+uint32_t lcd_on_time_us_increment = 500;
 void loop() {
 
   // Basic setup, 100% duty cycle
@@ -66,24 +66,26 @@ void loop() {
   delayMicroseconds(20);
   */
   // Characterize the RC time constant of things...
-  digitalWrite(LCD_BACKPLANE, HIGH);
-  digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(50000);
 
   digitalWrite(LCD_BACKPLANE, HIGH);
-  digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(lcd_on_time_us);
-
-  digitalWrite(LCD_BACKPLANE, LOW);
-  digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(50000);
-
-  digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(lcd_on_time_us);
-
-  lcd_on_time_us = (lcd_on_time_us + lcd_on_time_us_increment) % 6000;
+  lcd_on_time_us = (lcd_on_time_us + lcd_on_time_us_increment) % 10000;
   Serial.println(lcd_on_time_us);
+  delayMicroseconds(50000);
+
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(lcd_on_time_us);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(50000);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(lcd_on_time_us);
+
+
 
 
 
