@@ -92,19 +92,25 @@
 
     // Function to simulate the addressing of the LCD display
     function simulateAddressing(microseconds) {
+      const phase = Math.floor(microseconds / 5000) % 3;
       // Update each pixel based on its row and column addressing voltages
       for (let row = 0; row < numRows; row++) {
         for (let col = 0; col < numCols; col++) {
           var rowVoltage = 0;
           var colVoltage = 0;
 
-          if (row == 5) {
-            if (Math.floor(microseconds / 5000) % 2 == 0) {
+          if (phase == 0 || phase == 1) {
+            if (col == 5) {
+              colVoltage = 2.2;
+            }
+          }
+          if (phase == 1 || phase == 2) {
+            if (row == 5 || row == 7) {
               rowVoltage = 2.2;
             }
           }
-          if (col == 5) {
-            if (Math.floor(microseconds / 5000) % 2 == 1) {
+          if (phase == 2 || phase == 0) {
+            if (col == 6 || col == 7) {
               colVoltage = 2.2;
             }
           }
