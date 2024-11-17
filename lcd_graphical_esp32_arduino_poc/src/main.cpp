@@ -68,8 +68,8 @@ HardwareSerial Serial_UART(0);
 void CameraToLCD(uint16_t *x, uint16_t *y)
 {
   // Invert x too
-  uint32_t xTemp = ((-(*x) + 110) / 5) * 5;
-  uint32_t yTemp = ((*y + 75) / 5) * 5;
+  uint32_t xTemp = (-(*x) + 110);
+  uint32_t yTemp = (*y + 75);
 /*
   // Transform x,y to x',y' via scale and rotation...
   // Won't be this simple probably
