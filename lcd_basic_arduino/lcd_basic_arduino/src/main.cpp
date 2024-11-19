@@ -70,7 +70,7 @@ void loop() {
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, HIGH);
   lcd_on_time_us = (lcd_on_time_us + lcd_on_time_us_increment) % 10000;
-  Serial.println(lcd_on_time_us);
+  //Serial.println(lcd_on_time_us);
   delayMicroseconds(50000);
 
   digitalWrite(LCD_BACKPLANE, HIGH);
