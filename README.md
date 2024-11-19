@@ -10,6 +10,8 @@ https://github.com/nolanhergert/HeadlightBlocker/assets/377502/1ff41848-ae48-455
 https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels
 ## Features
   * Will dim all bright lights anywhere in your vision, including side view mirrors, reflected glare off the car / road (when raining at night). Sunglasses don't cut it because they darken the entire field of view evenly, which just makes your eyes dilate and then you're back to what you had before!
+  * Very responsive to dynamic lighting conditions. Allows you to customize your default pupil dilation if you need to "plunge below deck" / enter or exit tunnels and still see. Or slow the pain of going outside.
+  * Low cost! Doesn't require expensive TFT design.
 
 ## Justification
   * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
@@ -33,6 +35,7 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
 ### Stretch Customers
   * Fishing in choppy water. Apparently normal polarized sunglasses don't work? Might be interesting to have a one-filter version that has an LCD for rotating pixels oncoming light so its better cancelled by the filter without making the pixel dark/black.
     * FSTN refresh rate is pretty fast still. https://youtu.be/6h2D-CnLQEc?si=O5FLN6evWkWHE9HI&t=299
+  
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
