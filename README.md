@@ -21,7 +21,12 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
   * NHSTA dataset (what does it say??): [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
 
 ## Target Customers
+### Early Adopters, Short-Term
   * 
+
+
+### Long-term
+  * With a custom/expensive order of a "worse" polarizer that has better transmissibility, can approach much more of night-time driving market. Default polarizer is decent transmissivity, but final darkness is not necessary for 99% of situations.
   * All-day drivers/motorcycle/bicyclists/pilots/police/trucks either going into the morning/evening sun and can't use a fully-blocking visor but still need to see details
   * Athletes in the sun:
  [![2024 MLB Sun Causing Dropped Ball](http://img.youtube.com/vi/ILB3RLGkgXA/0.jpg)](http://www.youtube.com/watch?v=ILB3RLGkgXA "2024 MLB Sun Causing Dropped Ball")
