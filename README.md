@@ -22,7 +22,9 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
 
 ## Target Customers
 ### Early Adopters, Short-Term
-  * 
+  * I *think* people with daytime light sensitivity for whom sunglasses don't work well for them.
+    * 
+    * *People who after they damaged their eyes staring at the sun as a child. They have to wear shades permanently now*
 
 
 ### Long-term
