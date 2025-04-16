@@ -46,6 +46,6 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
-POC OpenCV code (for stepper motor solution, potentially obsolete) is here: https://github.com/nolanhergert/lib/blob/master/python/examples/headlight_blocker.py
+POC OpenCV code (for stepper motor solution, probably obsolete) is here: https://github.com/nolanhergert/lib/blob/master/python/examples/headlight_blocker.py
 
 Can leverage CH32V003fun to read from camera using DMA? Use this example https://github.com/cnlohr/ch32v003fun/blob/master/examples/dma_gpio/dma_gpio.c but change this line to be INDR? `DMA1_Channel2->PADDR = (uint32_t)&GPIOC->OUTDR;`
