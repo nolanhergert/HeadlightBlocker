@@ -1,7 +1,7 @@
 # HeadlightBlocker
 Are you like tons of people annoyed with the sun or headlights hurting your eyes? Nice video: https://www.youtube.com/watch?v=w0nBlZwUT3s
 
-There's an *actual* solution for this, here are some demo videos from a **previous startup** that fizzled out sorta, DynEye:
+There's an *actual* solution for this, here are some demo videos from a **previous startup** that fizzled out sorta, [https://web.archive.org/web/20240226041115/http://www.dyneye.com/](DynEye)
 
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/8a296c67-bb7e-49ee-8bd9-374424baa6de
 
@@ -22,7 +22,9 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
 
 ## Target Customers
 ### Early Adopters, Short-Term
-  * 
+  * I *think* people with daytime light sensitivity for whom sunglasses don't work well for them.
+    * 
+    * *People who after they damaged their eyes staring at the sun as a child. They have to wear shades permanently now*
 
 
 ### Long-term
@@ -46,6 +48,6 @@ https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, 
 
 See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
 
-POC OpenCV code (for stepper motor solution, potentially obsolete) is here: https://github.com/nolanhergert/lib/blob/master/python/examples/headlight_blocker.py
+POC OpenCV code (for stepper motor solution, probably obsolete) is here: https://github.com/nolanhergert/lib/blob/master/python/examples/headlight_blocker.py
 
 Can leverage CH32V003fun to read from camera using DMA? Use this example https://github.com/cnlohr/ch32v003fun/blob/master/examples/dma_gpio/dma_gpio.c but change this line to be INDR? `DMA1_Channel2->PADDR = (uint32_t)&GPIOC->OUTDR;`
