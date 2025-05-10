@@ -25,6 +25,9 @@
 */
 #include <Arduino.h>
 
+
+const int BUTTON_LOW = D4;
+const int BUTTON_SENSE = D3;
 const int LCD_BACKPLANE = D5;
 const int LCD_SEGMENT = D6;
 const int LCD_DELAY_MS_MAX = 1000/30/2; // 30FPS, switched twice
@@ -40,22 +43,27 @@ uint16_t lcd_duty_cycle_min = 0;
 // to think about this some more, maybe lower 5V down to 3.3V so you can raw pwm still
 uint16_t lcd_duty_cycle_max = 40;
 
+const unsigned long DEBOUNCE_MS = 250;
+
 
 
 // the setup function runs once when you press reset or power the board
 void setup() {
   pinMode(LCD_BACKPLANE, OUTPUT);
   pinMode(LCD_SEGMENT, OUTPUT);
+  pinMode(BUTTON_LOW, OUTPUT);
+  digitalWrite(BUTTON_LOW, LOW);
+  pinMode(BUTTON_SENSE, INPUT_PULLUP);
+
   Serial.begin(115200);
 }
 
-// the loop function runs over and over again forever
 #define MIN_LCD_US_SWITCH (1000000/(121)/2)
 uint32_t lcd_on_time_us = 0;
 uint32_t lcd_on_time_us_increment = 100;
-void loop() {
 
-  // Basic setup, 100% duty cycle
+void FullBlock() {
+    // Basic setup, 100% duty cycle
 
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, HIGH);
@@ -64,7 +72,102 @@ void loop() {
   digitalWrite(LCD_BACKPLANE, HIGH);
   digitalWrite(LCD_SEGMENT, LOW);
   delayMicroseconds(MIN_LCD_US_SWITCH);
-  
+}
+
+
+
+void Fade() {
+  // Fading in/out, works well, I think!
+  digitalWrite(LCD_BACKPLANE, LOW);
+  analogWrite(LCD_SEGMENT, lcd_duty_cycle);
+  delay(LCD_DELAY_MS_MAX);
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  // Write inverted to add up to 0 DC
+  analogWrite(LCD_SEGMENT, lcd_duty_cycle_max-lcd_duty_cycle);
+  delay(LCD_DELAY_MS_MAX);
+  lcd_duty_cycle += lcd_duty_cycle_diff;
+  if (lcd_duty_cycle > (lcd_duty_cycle_max - abs(lcd_duty_cycle_diff)) || lcd_duty_cycle < (lcd_duty_cycle_min + abs(lcd_duty_cycle_diff))) {
+    lcd_duty_cycle_diff *= -1;
+  }
+}
+
+void Off() {
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, LOW);
+}
+
+
+void SixtyHertz() {
+  // Try to dim at the same time as 60Hz lighting. 50% duty cycle
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(MIN_LCD_US_SWITCH);
+
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(MIN_LCD_US_SWITCH);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(MIN_LCD_US_SWITCH);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(MIN_LCD_US_SWITCH);
+}
+
+
+const int BADGE_PERIOD_US = 1000000/50;
+void LEDBadgeBlink() {
+  // Try to dim at the same time as AEMBOT badge
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(BADGE_PERIOD_US);
+
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(1000);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(BADGE_PERIOD_US);
+
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(1000);
+}
+
+
+typedef void(*Action)();    // Action is the typename for a pointer
+                            // to a function return null and taking
+                            // no parameters.
+
+Action   actions[] = {&FullBlock, &Fade, &Off, &SixtyHertz, &LEDBadgeBlink};        // An array of Action objects.
+
+
+
+int action_idx = 0;
+unsigned long last_debounce_time = 0;
+bool button_reset = false;
+
+void loop() {
+  if (((millis() - DEBOUNCE_MS) < last_debounce_time)) {
+    return;
+  }
+  if (digitalRead(BUTTON_SENSE) == HIGH) {
+    button_reset = true;
+  }
+  if (digitalRead(BUTTON_SENSE) == LOW && button_reset == true) {
+    action_idx = (action_idx + 1) % (sizeof(actions)/sizeof(actions[0]));
+    last_debounce_time = millis();
+    button_reset = false;
+  }
+
+  actions[action_idx]();
+
+
+
+
   // Characterize the RC time constant of things...
 /*
   digitalWrite(LCD_BACKPLANE, HIGH);
@@ -87,26 +190,6 @@ void loop() {
 
 
 */
-
-
-  // Try to dim at the same time as 60Hz lighting. 50% duty cycle
-  /*
-  digitalWrite(LCD_BACKPLANE, HIGH);
-  digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(MIN_LCD_US_SWITCH);
-
-  digitalWrite(LCD_BACKPLANE, HIGH);
-  digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(MIN_LCD_US_SWITCH);
-
-  digitalWrite(LCD_BACKPLANE, LOW);
-  digitalWrite(LCD_SEGMENT, LOW);
-  delayMicroseconds(MIN_LCD_US_SWITCH);
-
-  digitalWrite(LCD_BACKPLANE, LOW);
-  digitalWrite(LCD_SEGMENT, HIGH);
-  delayMicroseconds(MIN_LCD_US_SWITCH);
-  */
 
 /*
   // Add a resistor in-line to the current by using a pull-up resistance (20K for atmega).
@@ -150,18 +233,7 @@ void loop() {
 
 
 /*
-  // Fading in/out, works well, I think!
-  digitalWrite(LCD_BACKPLANE, LOW);
-  analogWrite(LCD_SEGMENT, lcd_duty_cycle);
-  delay(LCD_DELAY_MS_MAX);
-  digitalWrite(LCD_BACKPLANE, HIGH);
-  // Write inverted to add up to 0 DC
-  analogWrite(LCD_SEGMENT, lcd_duty_cycle_max-lcd_duty_cycle);
-  delay(LCD_DELAY_MS_MAX);
-  lcd_duty_cycle += lcd_duty_cycle_diff;
-  if (lcd_duty_cycle > (lcd_duty_cycle_max - abs(lcd_duty_cycle_diff)) || lcd_duty_cycle < (lcd_duty_cycle_min + abs(lcd_duty_cycle_diff))) {
-    lcd_duty_cycle_diff *= -1;
-  }
+
   //Serial.println(lcd_duty_cycle);
 */
 
