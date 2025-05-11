@@ -1,0 +1,16 @@
+[package]
+name = "my_embedded_project"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Add your NO_STD compatible dependencies here if any
+# e.g., cortex-m = "0.7"
+# e.g., embedded-hal = "0.2.7"
+
+# Dev dependencies are ONLY used for tests, examples, benchmarks
+# They CAN use std freely.
+[dev-dependencies]
+# You might not need any for simple unit tests
+# but if you wanted, e.g., a std-based mocking library for tests:
+# mockall = "0.11"

@@ -1,2 +1,4 @@
 .vscode/
 .pio
+rust/target/
+rust/Cargo.lock
