@@ -30,7 +30,7 @@ const int BUTTON_LOW = D4;
 const int BUTTON_SENSE = D3;
 const int LCD_BACKPLANE = D5;
 const int LCD_SEGMENT = D6;
-const int LCD_DELAY_MS_MAX = 1000/30/2; // 30FPS, switched twice
+const int LCD_DELAY_MS_MAX = 1000/60/2; // 60FPS, switched twice
 const int LCD_CHARGE_TIME_MS = 1;
 const int CAMERA_DELAY_US = 1; // 30FPS
 const int CAMERA_SWITCH_ITERATIONS = 500; //1ms is ok still
@@ -74,8 +74,6 @@ void FullBlock() {
   delayMicroseconds(MIN_LCD_US_SWITCH);
 }
 
-
-
 void Fade() {
   // Fading in/out, works well, I think!
   digitalWrite(LCD_BACKPLANE, LOW);
@@ -91,11 +89,55 @@ void Fade() {
   }
 }
 
+// 100% on, but change the driving frequency
+
+unsigned long delay_us = 0;
+
+unsigned long delay_us_step = 1;
+unsigned long delay_us_max = 500;
+unsigned long cycle_time_ms = 5000;
+
+/*
+unsigned long delay_us_step = 100;
+unsigned long delay_us_max = 15000;
+unsigned long millis_step_ms = 12;
+unsigned long millis_current_step = 0;
+*/
+void FreqSweep() {
+  delay_us = map(millis() % cycle_time_ms, 0, cycle_time_ms, 0, delay_us_max);
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(delay_us);
+
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(delay_us);
+}
+
+// 100% on, but alternate between two frequencies
+unsigned long delay_us_array[2] = {200, 500};
+unsigned long millis_alternate_step_ms = 10;
+unsigned long millis_current_step = 0;
+void FreqAlternate() {
+  digitalWrite(LCD_BACKPLANE, LOW);
+  digitalWrite(LCD_SEGMENT, HIGH);
+  delayMicroseconds(delay_us);
+
+  digitalWrite(LCD_BACKPLANE, HIGH);
+  digitalWrite(LCD_SEGMENT, LOW);
+  delayMicroseconds(delay_us);
+
+  if (millis() / millis_alternate_step_ms > millis_current_step) {
+    delay_us = delay_us_array[(millis_current_step % 2)];
+    millis_current_step = millis() / millis_alternate_step_ms;
+    printf("Delay us: %lu\n", delay_us);
+  }
+}
+
 void Off() {
   digitalWrite(LCD_BACKPLANE, LOW);
   digitalWrite(LCD_SEGMENT, LOW);
 }
-
 
 void SixtyHertz() {
   // Try to dim at the same time as 60Hz lighting. 50% duty cycle
@@ -142,7 +184,8 @@ typedef void(*Action)();    // Action is the typename for a pointer
                             // to a function return null and taking
                             // no parameters.
 
-Action   actions[] = {&FullBlock, &Fade, &Off, &SixtyHertz, &LEDBadgeBlink};        // An array of Action objects.
+//Action   actions[] = {&FullBlock, &Fade, &Off, &SixtyHertz, &LEDBadgeBlink};        // An array of Action objects.
+Action   actions[] = {&FreqSweep, &FreqAlternate, &FullBlock, &Fade, &Off};
 
 
 
