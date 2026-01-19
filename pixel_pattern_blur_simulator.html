@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pixel Pattern Blur Simulator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 16px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    label {
+      font-size: 14px;
+    }
+    canvas {
+      border: 1px solid #444;
+      image-rendering: pixelated;
+    }
+    select, input {
+      width: 256px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Pixel Pattern Blur Simulator</h2>
+
+  <div class="controls">
+    <label>
+      Pattern </br>
+      <select id="pattern">
+        <option value="grid">Square Grid</option>
+        <option value="stagger">Row Stagger</option>
+        <option value="sine">Sinusoidal Gaps</option>
+        
+      </select>
+    </label>
+
+    <label>
+      Pixel Pitch (px)</br>
+      <input type="range" id="pitch" min="6" max="40" value="16" oninput="this.nextElementSibling.value = this.value" />
+      <output>16</output>
+    </label>
+
+    <label>
+      Gap Width (px)</br>
+      <input type="range" id="gap" min="1" max="8" value="2" oninput="this.nextElementSibling.value = this.value" />
+      <output>2</output>
+    </label>
+    
+    <p></p>
+
+    <label>
+      Sine Amplitude (px)</br>
+      <input type="range" id="amp" min="0" max="5" value="1.0" step="0.1"oninput="this.nextElementSibling.value = this.value" />
+      <output>1.0</output>
+    </label>
+
+    <label>
+      Sine Wavelength (px)</br>
+      <input type="range" id="wave" min="1" max="200" value="20" oninput="this.nextElementSibling.value = this.value" />
+      <output>20</output>
+    </label>
+
+    <label>
+      Sine Phase Offset (px)</br>
+      <input type="range" id="phase" min="0" max="10" value="3" step="0.1" oninput="this.nextElementSibling.value = this.value" />
+      <output>3</output>
+    </label>
+    <p></p>
+
+    <label style="font-weight: bold;">
+      Blur Radius (px)</br>
+      <input type="range" id="blur" min="0" max="20" value="7.5" step="0.01" oninput="this.nextElementSibling.value = this.value" />
+      <output>7.5</output>
+    </label>
+
+  </div>
+
+  <canvas id="src" width="256" height="256"></canvas>
+  <canvas id="dst" width="256" height="256"></canvas>
+
+  <script>
+    const src = document.getElementById('src');
+    const dst = document.getElementById('dst');
+    const sctx = src.getContext('2d');
+    const dctx = dst.getContext('2d');
+
+    const controls = document.querySelectorAll('input, select');
+    controls.forEach(c => c.addEventListener('input', render));
+
+    function drawSinusoid(startX, startY, length, amplitude, frequency, phaseOffset, strokeWidth, direction) {
+      
+      sctx.lineWidth = strokeWidth;
+      sctx.beginPath();
+
+      if (direction === 'horizontal') {
+        for (let i = 0; i <= length; i += 0.5) {
+          const x = startX + i;
+          const y = startY + amplitude * Math.sin(frequency * i + phaseOffset);
+          if (i === 0) {
+            sctx.moveTo(x, y);
+          } else {
+            sctx.lineTo(x, y);
+          }
+        }
+      } else { // vertical
+        for (let i = 0; i <= length; i += 0.5) {
+          const x = startX + amplitude * Math.sin(frequency * i + phaseOffset);
+          const y = startY + i;
+          if (i === 0) {
+            sctx.moveTo(x, y);
+          } else {
+            sctx.lineTo(x, y);
+          }
+        }
+      }
+
+      sctx.stroke();
+    }
+
+    function render() {
+      const pitch = +document.getElementById('pitch').value;
+      const gap = +document.getElementById('gap').value;
+      const blur = +document.getElementById('blur').value;
+      const amp = +document.getElementById('amp').value;
+      const wave = +document.getElementById('wave').value;
+      const phase = +document.getElementById('phase').value;
+      const pat = document.getElementById('pattern').value;
+      
+
+
+      if (pat === 'sine') {
+        sctx.fillStyle = '#000';
+        sctx.fillRect(0, 0, src.width, src.height);
+        sctx.strokeStyle = '#fff';
+        for (let x = 0; x <= src.width; x += pitch) {
+          drawSinusoid(x, 0, 256, amp, (2 * Math.PI) / wave, (x/pitch) * phase, gap, 'vertical');
+        }
+        for (let y = 0; y <= src.height; y += pitch) {
+          drawSinusoid(0, y, 256, amp, (2 * Math.PI) / wave, (y/pitch) * phase, gap, 'horizontal');
+        }
+      } else {
+        sctx.fillStyle = '#fff';
+        sctx.fillRect(0, 0, src.width, src.height);
+        sctx.fillStyle = '#000';
+        for (let y = 1; y < src.height; y += pitch) {
+          let xoff = 1;
+          if (pat === 'stagger' && ((y-1) / pitch) % 2) xoff = pitch / 2;
+
+          for (let x = -pitch; x < src.width + pitch; x += pitch) {
+            let gx = x + xoff;
+            let gy = y;
+              sctx.fillRect(gx, gy, pitch - gap, pitch - gap);
+          }          
+        }
+          
+      }
+
+      dctx.clearRect(0, 0, dst.width, dst.height);
+      dctx.filter = blur ? `blur(${blur}px)` : 'none';
+      dctx.drawImage(src, 0, 0);
+      dctx.filter = 'none';
+    }
+
+    render();
+  </script>
+</body>
+</html>
