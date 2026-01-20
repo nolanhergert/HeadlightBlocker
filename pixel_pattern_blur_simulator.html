@@ -40,10 +40,10 @@
       Pattern </br>
       <select id="pattern">
 
-        
         <option value="grid">Square Grid</option>
         <option value="stagger">Row Stagger</option>
         <option value="sine">Sinusoidal</option>
+        <option value="blue">Blue Noise Voronoi</option>
         
       </select>
     </label>
@@ -79,6 +79,12 @@
       <input type="range" id="phase" min="0" max="10" value="4" step="0.1" oninput="this.nextElementSibling.value = this.value" />
       <output>4</output>
     </label>
+
+    <label>
+      Blue noise allowed diameter deviation (%)</br>
+      <input type="range" id="voronoiDeviation" min="0" max="100" value="5" step="5" oninput="this.nextElementSibling.value = this.value" />
+      <output>5</output>
+    </label>
     <p></p>
 
     <label style="font-weight: bold;">
@@ -86,8 +92,6 @@
       <input type="range" id="blur" min="0" max="40" value="18" step="1" oninput="this.nextElementSibling.value = this.value" />
       <output>18</output>
     </label>
-    <p>Best viewed with manual focus on phone</p>
-
   </div>
 
   <canvas id="src" width="256" height="256"></canvas>
@@ -100,7 +104,10 @@
     const dctx = dst.getContext('2d');
 
     const controls = document.querySelectorAll('input, select');
-    controls.forEach(c => c.addEventListener('input', render));
+    controls.forEach(c => c.addEventListener('input', (event) => {
+      //console.log(`Input changed: ${event.target.id}, New Value: ${event.target.value}`);
+      render(event.target.id);
+    }));
 
     function drawSinusoid(startX, startY, length, amplitude, frequency, phaseOffset, strokeWidth, direction) {
       
@@ -208,53 +215,233 @@
     }
 
 
+    /**
+     * Generate blue noise distributed points using Poisson disk sampling
+     * @param {number} width - Canvas width
+     * @param {number} height - Canvas height
+     * @param {number} pitch - Average spacing between points
+     * @param {number} deviationPercent - Percentage deviation allowed
+     * @returns {Array} Array of {x, y} points
+     */
+    function generateBlueNoisePoints(width, height, pitch, deviationPercent) {
+      const points = [];
+      const minDist = pitch * (1 - deviationPercent / 100);
+      const maxDist = pitch * (1 + deviationPercent / 100);
+      const cellSize = minDist / Math.sqrt(2);
+      const cols = Math.ceil(width / cellSize);
+      const rows = Math.ceil(height / cellSize);
+      const grid = new Array(cols * rows).fill(-1);
+      const active = [];
+      const k = 300; // Number of attempts before rejection
+      
+      // Helper function to get grid index
+      function gridIndex(x, y) {
+        const col = Math.floor(x / cellSize);
+        const row = Math.floor(y / cellSize);
+        if (col < 0 || col >= cols || row < 0 || row >= rows) return -1;
+        return row * cols + col;
+      }
+      
+      // Helper function to check if point is valid
+      function isValid(x, y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) return false;
+        
+        const gidx = gridIndex(x, y);
+        if (gidx === -1) return false;
+        
+        // Check neighboring cells
+        const col = Math.floor(x / cellSize);
+        const row = Math.floor(y / cellSize);
+        
+        for (let r = Math.max(0, row - 2); r <= Math.min(rows - 1, row + 2); r++) {
+          for (let c = Math.max(0, col - 2); c <= Math.min(cols - 1, col + 2); c++) {
+            const neighborIdx = r * cols + c;
+            const pointIdx = grid[neighborIdx];
+            
+            if (pointIdx !== -1) {
+              const dx = x - points[pointIdx].x;
+              const dy = y - points[pointIdx].y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist < minDist) {
+                return false;
+              }
+            }
+          }
+        }
+        
+        return true;
+      }
+      
+      // Start with a random point
+      const startX = Math.random() * width;
+      const startY = Math.random() * height;
+      points.push({x: startX, y: startY});
+      active.push(0);
+      grid[gridIndex(startX, startY)] = 0;
+      
+      // Process active list
+      while (active.length > 0) {
+        const randomIdx = Math.floor(Math.random() * active.length);
+        const pointIdx = active[randomIdx];
+        const point = points[pointIdx];
+        let found = false;
+        
+        for (let i = 0; i < k; i++) {
+          // Generate random point around the current point
+          const angle = Math.random() * 2 * Math.PI;
+          const radius = minDist + Math.random() * (maxDist - minDist);
+          const newX = point.x + radius * Math.cos(angle);
+          const newY = point.y + radius * Math.sin(angle);
+          
+          if (isValid(newX, newY)) {
+            const newIdx = points.length;
+            points.push({x: newX, y: newY});
+            active.push(newIdx);
+            grid[gridIndex(newX, newY)] = newIdx;
+            found = true;
+            break;
+          }
+        }
+        
+        if (!found) {
+          active.splice(randomIdx, 1);
+        }
+      }
+      
+      return points;
+    }
 
-    function render() {
+    /**
+     * Draw pixels with blue noise centers and Voronoi edges
+     * @param {CanvasRenderingContext2D} ctx - The canvas context to draw on
+     * @param {number} pixelPitch - Average spacing between pixel centers (in pixels)
+     * @param {number} gapWidth - Width of the gap between pixels (in pixels)
+     * @param {number} deviationPercent - Allowed percentage deviation in spacing (0-100)
+     */
+    function drawBlueNoiseVoronoi(ctx, pixelPitch, gapWidth, deviationPercent) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      
+      // Generate blue noise points
+      const points = generateBlueNoisePoints(width, height, pixelPitch, deviationPercent);
+      
+      // Draw Voronoi cells for each pixel
+      const imageData = ctx.createImageData(width, height);
+      const data = imageData.data;
+      
+      // For each pixel in the canvas, find the nearest point
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          
+          // Find nearest point
+          let minDist = Infinity;
+          let nearestIdx = -1;
+          
+          for (let i = 0; i < points.length; i++) {
+            const dx = x - points[i].x;
+            const dy = y - points[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < minDist) {
+              minDist = dist;
+              nearestIdx = i;
+            }
+          }
+          
+          // Check if we're near the edge of the Voronoi cell (gap)
+          let secondMinDist = Infinity;
+          for (let i = 0; i < points.length; i++) {
+            if (i === nearestIdx) continue;
+            const dx = x - points[i].x;
+            const dy = y - points[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < secondMinDist) {
+              secondMinDist = dist;
+            }
+          }
+          
+          // If the difference between nearest and second-nearest is small, we're at an edge
+          const edgeThreshold = gapWidth / 2;
+          const isEdge = (secondMinDist - minDist) < edgeThreshold;
+          
+          // Set pixel color (white for cell, black for edge/gap)
+          const value = isEdge ? 255 : 0;
+          data[idx] = value;     // R
+          data[idx + 1] = value; // G
+          data[idx + 2] = value; // B
+          data[idx + 3] = 255;   // A
+        }
+      }
+/*
+      // Draw the blue noise center points
+      points.forEach(point => {
+        const x = Math.round(point.x);
+        const y = Math.round(point.y);
+        const idx = (y * width + x) * 4;
+        data[idx] = 255;     // R
+        data[idx + 1] = 255;   // G
+        data[idx + 2] = 255;   // B
+        data[idx + 3] = 255; // A
+      });
+      */
+      
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+
+
+    function render(updatedId) {
       const pitch = +document.getElementById('pitch').value;
       const gap = +document.getElementById('gap').value;
       const blur = +document.getElementById('blur').value;
       const amp = +document.getElementById('amp').value;
       const wave = +document.getElementById('wave').value;
       const phase = +document.getElementById('phase').value;
+      const voronoiDeviation = +document.getElementById('voronoiDeviation').value;
       const pat = document.getElementById('pattern').value;
       
 
+      if (updatedId !== 'blur') {
+        if (pat === 'sine') {
+          sctx.fillStyle = '#000';
+          sctx.fillRect(0, 0, src.width, src.height);
+          sctx.strokeStyle = '#fff';
+          for (let x = 0; x <= src.width; x += pitch) {
+            drawSinusoid(x, 0, 256, amp, (2 * Math.PI) / wave, (x/pitch) * phase, gap, 'vertical');
+          }
+          for (let y = 0; y <= src.height; y += pitch) {
+            drawSinusoid(0, y, 256, amp, (2 * Math.PI) / wave, (y/pitch) * phase, gap, 'horizontal');
+          }
+        } else if (pat === 'blue') {
+          drawBlueNoiseVoronoi(sctx, pitch, gap, voronoiDeviation);
+        } else {
+          sctx.fillStyle = '#fff';
+          sctx.fillRect(0, 0, src.width, src.height);
+          sctx.fillStyle = '#000';
+          for (let y = 1; y < src.height; y += pitch) {
+            let xoff = 1;
+            if (pat === 'stagger' && ((y-1) / pitch) % 2) xoff = pitch / 2;
 
-      if (pat === 'sine') {
-        sctx.fillStyle = '#000';
-        sctx.fillRect(0, 0, src.width, src.height);
-        sctx.strokeStyle = '#fff';
-        for (let x = 0; x <= src.width; x += pitch) {
-          drawSinusoid(x, 0, 256, amp, (2 * Math.PI) / wave, (x/pitch) * phase, gap, 'vertical');
+            for (let x = -pitch; x < src.width + pitch; x += pitch) {
+              let gx = x + xoff;
+              let gy = y;
+                sctx.fillRect(gx, gy, pitch - gap, pitch - gap);
+            }          
+          }    
         }
-        for (let y = 0; y <= src.height; y += pitch) {
-          drawSinusoid(0, y, 256, amp, (2 * Math.PI) / wave, (y/pitch) * phase, gap, 'horizontal');
-        }
-      } else {
-        sctx.fillStyle = '#fff';
-        sctx.fillRect(0, 0, src.width, src.height);
-        sctx.fillStyle = '#000';
-        for (let y = 1; y < src.height; y += pitch) {
-          let xoff = 1;
-          if (pat === 'stagger' && ((y-1) / pitch) % 2) xoff = pitch / 2;
-
-          for (let x = -pitch; x < src.width + pitch; x += pitch) {
-            let gx = x + xoff;
-            let gy = y;
-              sctx.fillRect(gx, gy, pitch - gap, pitch - gap);
-          }          
-        }
-          
+        thresholdImageData(sctx);
       }
-
       dctx.clearRect(0, 0, dst.width, dst.height);
-      thresholdImageData(sctx);
       dctx.drawImage(src, 0, 0);
       applyBoxBlur(dctx, blur);
     }
 
-
     render();
+
+  
   </script>
 </body>
 </html>
