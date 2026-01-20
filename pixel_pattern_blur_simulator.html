@@ -42,6 +42,7 @@
 
         <option value="grid">Square Grid</option>
         <option value="stagger">Row Stagger</option>
+        <option value="hexagonal">Hexagonal Grid</option>
         <option value="sine">Sinusoidal</option>
         <option value="blue">Blue Noise Voronoi</option>
         
@@ -313,6 +314,29 @@
     }
 
     /**
+     * Draw a hexagon centered at (cx, cy) with a given radius
+     * @param {CanvasRenderingContext2D} ctx - The canvas context
+     * @param {number} cx - Center x coordinate
+     * @param {number} cy - Center y coordinate
+     * @param {number} radius - Radius from center to vertex
+     */
+    function drawHexagon(ctx, cx, cy, radius) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i + Math.PI / 6;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /**
      * Draw pixels with blue noise centers and Voronoi edges
      * @param {CanvasRenderingContext2D} ctx - The canvas context to draw on
      * @param {number} pixelPitch - Average spacing between pixel centers (in pixels)
@@ -417,6 +441,19 @@
           }
         } else if (pat === 'blue') {
           drawBlueNoiseVoronoi(sctx, pitch, gap, voronoiDeviation);
+        } else if (pat === 'hexagonal') {
+          sctx.fillStyle = '#fff';
+          sctx.fillRect(0, 0, src.width, src.height);
+          sctx.fillStyle = '#000';
+          const rowHeight = pitch * Math.sqrt(3) / 2;
+          for (let row = 0; row * rowHeight < src.height + pitch; row++) {
+            const y = row * rowHeight;
+            const xOffset = (row % 2) * (pitch / 2);
+            for (let col = 0; col * pitch < src.width + pitch; col++) {
+              const x = col * pitch + xOffset;
+              drawHexagon(sctx, x, y, (pitch - gap) / 2 + 2);
+            }
+          }
         } else {
           sctx.fillStyle = '#fff';
           sctx.fillRect(0, 0, src.width, src.height);
