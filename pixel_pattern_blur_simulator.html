@@ -39,6 +39,8 @@
     <label>
       Pattern </br>
       <select id="pattern">
+
+        
         <option value="grid">Square Grid</option>
         <option value="stagger">Row Stagger</option>
         <option value="sine">Sinusoidal</option>
@@ -54,16 +56,16 @@
 
     <label>
       Gap Width (px)</br>
-      <input type="range" id="gap" min="1" max="8" value="2" oninput="this.nextElementSibling.value = this.value" />
-      <output>2</output>
+      <input type="range" id="gap" min="1" max="8" value="3" oninput="this.nextElementSibling.value = this.value" />
+      <output>3</output>
     </label>
     
     <p></p>
 
     <label>
       Sine Amplitude (px)</br>
-      <input type="range" id="amp" min="0" max="5" value="1.0" step="0.1"oninput="this.nextElementSibling.value = this.value" />
-      <output>1.0</output>
+      <input type="range" id="amp" min="0" max="5" value="2" step="0.1"oninput="this.nextElementSibling.value = this.value" />
+      <output>2</output>
     </label>
 
     <label>
@@ -74,16 +76,17 @@
 
     <label>
       Sine Phase Offset (px)</br>
-      <input type="range" id="phase" min="0" max="10" value="3" step="0.1" oninput="this.nextElementSibling.value = this.value" />
-      <output>3</output>
+      <input type="range" id="phase" min="0" max="10" value="4" step="0.1" oninput="this.nextElementSibling.value = this.value" />
+      <output>4</output>
     </label>
     <p></p>
 
     <label style="font-weight: bold;">
       Blur Radius (px)</br>
-      <input type="range" id="blur" min="0" max="20" value="7.5" step="0.01" oninput="this.nextElementSibling.value = this.value" />
-      <output>7.5</output>
+      <input type="range" id="blur" min="0" max="40" value="18" step="1" oninput="this.nextElementSibling.value = this.value" />
+      <output>18</output>
     </label>
+    <p>Best viewed with manual focus on phone</p>
 
   </div>
 
@@ -129,6 +132,83 @@
       sctx.stroke();
     }
 
+    function thresholdImageData(sctx) {      // Get the image data from the canvas
+      const imageData = sctx.getImageData(0, 0, src.width, src.height);
+      const data = imageData.data;
+
+      // Apply thresholding to make the sinusoid either black or white
+      for (let i = 0; i < data.length; i += 4) {
+        const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        const threshold = 128; // Adjust this value as needed
+        const value = brightness > threshold ? 255 : 0;
+
+        data[i] = value;     // Red
+        data[i + 1] = value; // Green
+        data[i + 2] = value; // Blue
+      }
+
+      // Put the modified image data back onto the canvas
+      sctx.putImageData(imageData, 0, 0);
+    }
+
+
+    function applyBoxBlur(ctx, radius) {
+      if (radius <= 0) return;
+      
+      // Get the image data
+      const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+      const width = imageData.width;
+      const height = imageData.height;
+      const data = imageData.data;
+      
+      // Create output buffer
+      const output = new Uint8ClampedArray(data.length);
+      
+      const radiusCeil = Math.ceil(radius);
+      const radiusSquared = radius * radius;
+      
+      // Single pass radial blur
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let r = 0, g = 0, b = 0, a = 0;
+          let count = 0;
+          
+          // Sample pixels in a circular pattern
+          for (let ky = -radiusCeil; ky <= radiusCeil; ky++) {
+            for (let kx = -radiusCeil; kx <= radiusCeil; kx++) {
+              // Check if within circle
+              const distSquared = kx * kx + ky * ky;
+              if (distSquared <= radiusSquared) {
+                const sx = x + kx;
+                const sy = y + ky;
+                
+                if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+                  const idx = (sy * width + sx) * 4;
+                  r += data[idx];
+                  g += data[idx + 1];
+                  b += data[idx + 2];
+                  a += data[idx + 3];
+                  count++;
+                }
+              }
+            }
+          }
+          
+          const idx = (y * width + x) * 4;
+          output[idx] = r / count;
+          output[idx + 1] = g / count;
+          output[idx + 2] = b / count;
+          output[idx + 3] = a / count;
+        }
+      }
+      
+      // Put the blurred data back
+      const outputImageData = new ImageData(output, width, height);
+      ctx.putImageData(outputImageData, 0, 0);
+    }
+
+
+
     function render() {
       const pitch = +document.getElementById('pitch').value;
       const gap = +document.getElementById('gap').value;
@@ -168,10 +248,11 @@
       }
 
       dctx.clearRect(0, 0, dst.width, dst.height);
-      dctx.filter = blur ? `blur(${blur}px)` : 'none';
+      thresholdImageData(sctx);
       dctx.drawImage(src, 0, 0);
-      dctx.filter = 'none';
+      applyBoxBlur(dctx, blur);
     }
+
 
     render();
   </script>
