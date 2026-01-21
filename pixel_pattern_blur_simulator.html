@@ -45,6 +45,7 @@
         <option value="hexagonal">Hexagonal Grid</option>
         <option value="sine">Sinusoidal</option>
         <option value="blue">Blue Noise Voronoi</option>
+        <option value="hexagonalblue">Hexagonal + Temporarily White Noise Voronoi</option>
         
       </select>
     </label>
@@ -216,6 +217,45 @@
     }
 
 
+
+    /**
+     * Draw a hexagon centered at (cx, cy) with a given radius
+     * @param {CanvasRenderingContext2D} ctx - The canvas context
+     * @param {number} cx - Center x coordinate
+     * @param {number} cy - Center y coordinate
+     * @param {number} radius - Radius from center to vertex
+     */
+    function drawHexagon(ctx, cx, cy, radius) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i + Math.PI / 6;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function generateHexagonCenters(pitch) {
+      let centers = [];
+      const rowHeight = pitch;
+      const colWidth = pitch * Math.sqrt(3) / 2;
+      for (let row = 0; row * rowHeight < src.height + pitch; row++) {
+        const y = row * rowHeight;
+        for (let col = 0; col * colWidth < src.width + pitch; col++) {
+          const yOffset = (col % 2) * (pitch / 2);
+          const x = col * colWidth;
+          centers.push({x: x, y: y + yOffset});
+        }
+      }
+      return centers;
+    }
+
     /**
      * Generate blue noise distributed points using Poisson disk sampling
      * @param {number} width - Canvas width
@@ -224,7 +264,7 @@
      * @param {number} deviationPercent - Percentage deviation allowed
      * @returns {Array} Array of {x, y} points
      */
-    function generateBlueNoisePoints(width, height, pitch, deviationPercent) {
+    function generateBlueNoiseCenters(width, height, pitch, deviationPercent) {
       const points = [];
       const minDist = pitch * (1 - deviationPercent / 100);
       const maxDist = pitch * (1 + deviationPercent / 100);
@@ -312,43 +352,15 @@
       
       return points;
     }
-
-    /**
-     * Draw a hexagon centered at (cx, cy) with a given radius
-     * @param {CanvasRenderingContext2D} ctx - The canvas context
-     * @param {number} cx - Center x coordinate
-     * @param {number} cy - Center y coordinate
-     * @param {number} radius - Radius from center to vertex
-     */
-    function drawHexagon(ctx, cx, cy, radius) {
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI / 3) * i + Math.PI / 6;
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-      ctx.closePath();
-      ctx.fill();
-    }
-
+    
     /**
      * Draw pixels with blue noise centers and Voronoi edges
      * @param {CanvasRenderingContext2D} ctx - The canvas context to draw on
-     * @param {number} pixelPitch - Average spacing between pixel centers (in pixels)
      * @param {number} gapWidth - Width of the gap between pixels (in pixels)
-     * @param {number} deviationPercent - Allowed percentage deviation in spacing (0-100)
      */
-    function drawBlueNoiseVoronoi(ctx, pixelPitch, gapWidth, deviationPercent) {
+    function drawVoronoi(ctx, points, gapWidth) {
       const width = ctx.canvas.width;
       const height = ctx.canvas.height;
-      
-      // Generate blue noise points
-      const points = generateBlueNoisePoints(width, height, pixelPitch, deviationPercent);
       
       // Draw Voronoi cells for each pixel
       const imageData = ctx.createImageData(width, height);
@@ -399,7 +411,7 @@
           data[idx + 3] = 255;   // A
         }
       }
-/*
+      /*
       // Draw the blue noise center points
       points.forEach(point => {
         const x = Math.round(point.x);
@@ -439,21 +451,25 @@
           for (let y = 0; y <= src.height; y += pitch) {
             drawSinusoid(0, y, 256, amp, (2 * Math.PI) / wave, (y/pitch) * phase, gap, 'horizontal');
           }
-        } else if (pat === 'blue') {
-          drawBlueNoiseVoronoi(sctx, pitch, gap, voronoiDeviation);
         } else if (pat === 'hexagonal') {
-          sctx.fillStyle = '#fff';
-          sctx.fillRect(0, 0, src.width, src.height);
-          sctx.fillStyle = '#000';
-          const rowHeight = pitch * Math.sqrt(3) / 2;
-          for (let row = 0; row * rowHeight < src.height + pitch; row++) {
-            const y = row * rowHeight;
-            const xOffset = (row % 2) * (pitch / 2);
-            for (let col = 0; col * pitch < src.width + pitch; col++) {
-              const x = col * pitch + xOffset;
-              drawHexagon(sctx, x, y, (pitch - gap) / 2 + 2);
-            }
-          }
+          const centers = generateHexagonCenters(pitch);
+          drawVoronoi(sctx, centers, gap);
+
+        } else if (pat === 'blue') {
+          let centers = generateBlueNoiseCenters(src.width, src.height, pitch, voronoiDeviation);
+          drawVoronoi(sctx, centers, gap);
+        } else if (pat === 'hexagonalblue') {
+          let centers = generateHexagonCenters(pitch);
+          // Introduce some noise to hex centers
+          centers = centers.map(c => {
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = (Math.random() - 0.5) * (pitch * voronoiDeviation / 100);
+            return {
+              x: c.x + radius * Math.cos(angle),
+              y: c.y + radius * Math.sin(angle)
+            };
+          });
+          drawVoronoi(sctx, centers, gap);
         } else {
           sctx.fillStyle = '#fff';
           sctx.fillRect(0, 0, src.width, src.height);
