@@ -41,22 +41,31 @@ hexagon_side_length = hexagon_half_height / math.cos(math.radians(30))
 hexagon_half_width =  hexagon_side_length 
 
 
-angled_gap_x = math.cos(math.radians(60)) * trace_gap
-angled_gap_y = math.sin(math.radians(60)) * trace_gap
+angled_gap_x = trace_gap #math.cos(math.radians(60)) * trace_gap + trace_gap/2
+angled_gap_y = trace_gap/2 #math.sin(math.radians(60)) * trace_gap - trace_gap/2
 
 #def wayfarer_outline(msp):
 
-def hexagon_horizontal_line(x,y):
+def hexagon_horizontal_line(x,y, is_top_line):
     polyline = [(x, y)]
-    # Start downwards always for now
-    polarity = -1
+    gap_down = (angled_gap_x, -angled_gap_y)
+    gap_up = (angled_gap_x, angled_gap_y)
+    hex_down = (hexagon_half_width/2, -hexagon_half_height)
+    hex_horizontal = (hexagon_side_length, 0)
+    hex_up = (hexagon_half_width/2, hexagon_half_height)
+    # Ordering is slightly different for top and bottom
+    # Start downwards on gap always for now
+    if is_top_line:
+        pattern = [hex_horizontal, hex_down, gap_down, hex_horizontal, gap_up, hex_up]
+    else:
+        pattern = [hex_horizontal, gap_down, hex_down, hex_horizontal, hex_up, gap_up]
+
     while x < grid_width:
-        x += hexagon_half_width/2 + angled_gap_x
-        y += (hexagon_half_height + angled_gap_y)*polarity
-        polyline.append((x, y))
-        x += hexagon_side_length
-        polyline.append((x, y))
-        polarity *= -1
+        
+        for x_add, y_add in pattern:
+            x += x_add
+            y += y_add
+            polyline.append((x, y))
 
     return polyline
 
@@ -66,25 +75,25 @@ def hexagons_horizontal_traces(doc):
     layer.transparency = TRANSPARENCY
     
     
-    x = -angled_gap_x
-    y = hexagon_half_height + angled_gap_y
+    x = 0
+    y = 0
 
     while y < grid_height:
         polyline = []
-        polyline.extend(hexagon_horizontal_line(x, y))
-        msp.add_lwpolyline(polyline, dxfattribs={'layer': 'BottomLayer', 'color': 1})  # Color 1 corresponds to red in ACI
-        polyline = []
-        foo = hexagon_horizontal_line(x + hexagon_side_length, y)
-        foo.reverse()   
+        polyline.extend(hexagon_horizontal_line(x, y, is_top_line=False))
+        #msp.add_lwpolyline(polyline, dxfattribs={'layer': 'BottomLayer', 'color': 1})  # Color 1 corresponds to red in ACI
+        #polyline = []
+        foo = hexagon_horizontal_line(x, y + hexagon_half_height*2, is_top_line=True)
+        foo.reverse()
         polyline.extend(foo)
-        msp.add_lwpolyline(polyline, dxfattribs={'layer': 'BottomLayer', 'color': 3})
+        #msp.add_lwpolyline(polyline, dxfattribs={'layer': 'BottomLayer', 'color': 3})
 
         # optional: keep a closed lwpolyline for visibility
-        #msp.add_lwpolyline(polyline, dxfattribs={'closed': True, 'layer': 'BottomLayer', 'color': 4})
+        msp.add_lwpolyline(polyline, dxfattribs={'closed': True, 'layer': 'BottomLayer', 'color': 4})
         # add a solid hatch to fill the polygohexagons_horizontal_tracesn defined by `polyline`
         hatch = msp.add_hatch()
         hatch.set_solid_fill(1)               # choose ACI color index
-        #hatch.paths.add_polyline_path(polyline, is_closed=True)
+        hatch.paths.add_polyline_path(polyline, is_closed=True)
         hatch.dxf.layer = 'BottomLayer'
         
 
@@ -136,7 +145,7 @@ def hexagons_vertical_traces(doc):
             
 
         # optional: keep a closed lwpolyline for visibility
-        #msp.add_lwpolyline(polyline, dxfattribs={'closed': True, 'layer': 'TopLayer'})
+        msp.add_lwpolyline(polyline, dxfattribs={'closed': True, 'layer': 'TopLayer'})
         # add a solid hatch to fill the polygon defined by `polyline`
         hatch = msp.add_hatch()
         hatch.set_solid_fill(1)               # choose ACI color index
