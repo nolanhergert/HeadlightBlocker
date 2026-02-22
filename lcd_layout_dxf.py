@@ -164,6 +164,7 @@ def hexagons_vertical_traces(doc):
 
 def example_doc():
     doc = ezdxf.new()
+    #doc = SimpleDXF('foo.dxf')
     msp = doc.modelspace()
     x0, y0, x1, y1 = 0, 0, 10, 10
     start = (x0, y0)
@@ -199,6 +200,8 @@ def export(doc):
     svg_string = backend.get_string(page)
     with open("output.svg", "wt", encoding="utf8") as fp:
         fp.write(svg_string)
+    doc.saveas('output.dxf')
+    
 
 
 if __name__ == "__main__":
