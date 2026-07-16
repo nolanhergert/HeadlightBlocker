@@ -1,53 +1,70 @@
 # HeadlightBlocker
-Are you like tons of people annoyed with the sun or headlights hurting your eyes? Nice video: https://www.youtube.com/watch?v=w0nBlZwUT3s
+Note! AI assisted
 
-There's an *actual* solution for this, here are some demo videos from a **previous startup** that fizzled out sorta, [https://web.archive.org/web/20240226041115/http://www.dyneye.com/](DynEye)
+I'm prototyping low-cost eyewear that selectively dims intense light — sunlight, reflected glare, oncoming headlights — while leaving the rest of the scene visible.
+
+Regular sunglasses only have one trick: darken everything, all the time. That works, but it also means you're seeing the whole world through a dimmer switch just to deal with one bright patch of it. I wanted to know if I could instead darken only the area around the bright source and leave everything else alone — dim just the headlight, not the whole road.
+
+This repo is where I've been working through the optical, electronic, firmware, and business questions behind that idea. It's an active exploration, not a finished product, and nothing here should be treated as a driving-safety or medical device.
+
+## What I'm actually trying to answer
+
+Three questions keep coming up:
+
+1. Can cheap, low-power hardware actually pull off useful selective dimming?
+2. Are there enough people who feel this problem strongly enough to pay for a fix?
+3. If the answer to both is yes, why doesn't this already exist?
+
+I don't have final answers, but I've been chasing all three at once: tens of customer discovery interviews to understand how people actually experience glare and whether they'd pay to fix it, conversations with people who've founded companies in or around this space to get an honest read on where the business risk really lives, and simulations, bench tests, and physical prototypes to see what's technically achievable. None of it tells me whether this should become a company — it just cuts the uncertainty down one conversation and one experiment at a time, instead of assuming "technically interesting" means "good business."
+
+My current best guess at early adopters is people with daytime light sensitivity and drivers badly bothered by headlight glare at night; pilots, cyclists, athletes, and professional drivers seem like plausible extensions, but those are hypotheses, not validated customers.
+
+## Current technical directions
+
+### Designing a pixel pattern that disappears
+
+Hold any LCD close to your eye and the pixel grid itself becomes part of what you see: the gaps between pixels and the traces connecting them blur together with whatever light is passing through, closer to halftone dithering in a newspaper photo than to clean, uniform dimming. Getting that pattern to disappear, rather than draw attention to itself, turns out to be its own small design problem: what pixel shape gives the best black-to-transparent ratio at the edges, how do you hide or cover the traces, what ITO layer thickness avoids introducing its own refractive glare, and so on — a lot of interacting choices that are slow and expensive to explore by ordering LCD samples one at a time.
+
+So I built a simulator to try out pixel shapes and spacings before committing to an actual LCD order.
+
+Try it here: [LCD pixel-pattern blur simulator](https://nolanhergert.github.io/HeadlightBlocker/pixel_pattern_blur_simulator.html).
+
+### Getting high contrast out of cheap passive-matrix LCDs
+
+This is a separate problem from the one above, and it's about electronics, not optics. Passive-matrix LCDs are cheap and can be made at high resolution, but they're driven by multiplexing: each row only gets a small slice of the total drive time, and that low duty cycle caps how dark a pixel can actually get. That's why passive-matrix displays usually look washed out compared to active-matrix (TFT) screens — and why TFT is normally the fallback once you need real contrast, at a much higher cost.
+
+I've worked out a way to drive multiple rows in parallel using off-the-shelf chip-on-glass driver chips instead of custom silicon, which raises the effective duty cycle and gets much closer to TFT-like contrast on a passive-matrix panel. The goal is high resolution and high contrast without paying for a custom TFT display or its minimum order quantities.
+
+### Low-power sensing and tracking
+
+The system also needs to find bright, localized sources, figure out roughly where they are, and keep tracking them as the scene changes — all without running a full always-on vision pipeline, since that would blow through the power budget almost immediately. Staying at ultra-low power shapes almost every decision here: sensor choice, sampling rate, how much you can afford to compute versus just measure directly.
+
+### Low-level embedded control
+
+I've been teaching myself Rust while working on the low-level control paths on a CH32-series microcontroller. Incoming frame data comes in via DMA so the CPU isn't stuck babysitting the transfer, then gets warped to line up with the display's geometry and inverted into a blocking mask, fast enough inside the CPU to keep up with a moving light source. That warp is specific to each user, since it depends on exactly how the display sits relative to their eyes, so it needs its own calibration step. Other areas I've been digging into: how the watchdog timer actually behaves under real firmware conditions instead of just the datasheet version, and how to squeeze out power savings without adding latency the system can't afford. All of this ties back to the same constraint: the system has to react to a changing light source quickly, on a tiny power and memory budget.
+
+The Rust code itself isn't published — the camera chip's register-level details are covered by an NDA, and the rest is scattered across a pile of exploratory prototypes I wrote while learning the chip and the language at the same time, not exactly something I'd call presentable.
+
+## Earlier work and demonstrations
+
+The demos below are from DynEye, an earlier project and startup founded by Chris Mullin that took on a similar idea before I got involved. Good historical context, and worth a look at the broader concept in action:
+
+[DynEye archive](https://web.archive.org/web/20240226041115/http://www.dyneye.com/)
+
+A CBS News segment on nighttime headlight glare (not about DynEye specifically, but a good overview of the underlying problem):
+
+[![CBS News segment on nighttime headlight glare](http://img.youtube.com/vi/w0nBlZwUT3s/0.jpg)](https://www.youtube.com/watch?v=w0nBlZwUT3s "CBS News segment on nighttime headlight glare")
+
+DynEye demo clips:
 
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/8a296c67-bb7e-49ee-8bd9-374424baa6de
 
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/1ff41848-ae48-455d-8731-473bc94387cb
 
-https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/, https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels
-## Features
-  * Will dim all bright lights anywhere in your vision, including side view mirrors, reflected glare off the car / road (when raining at night). Sunglasses don't cut it because they darken the entire field of view evenly, which just makes your eyes dilate and then you're back to what you had before!
-  * Very responsive to dynamic lighting conditions. Allows you to customize your default pupil dilation if you need to "plunge below deck" / enter or exit tunnels and still see. Or slow the pain of going outside.
-  * Low cost! Doesn't require expensive TFT design.
+Press coverage: [Popular Science: Glare Killer](https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/), [Inside Science: LCD sunglasses](https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels)
 
-## Justification
-  * This shouldn't be a thing: "If oncoming traffic lights are too bright or blinding, focus eyes toward the edge of the road."
-     * It's painful for your rods/cones to over expose. Since the light source is small, usually your iris won't dilate much either.
-     * It takes time for your eyes to dilate again, especially if you are older.
-  * "Can’t comment on other parts of the country, but in California it’s pretty much mandatory to wear sunglasses during sunny days. Which is most of them. The concrete is white and quite blinding in the sunlight. I keep spares in the car just incase, simply can’t drive without them."
-  * NHSTA dataset (what does it say??): [https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/2021/](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CRSS/)
+## Following along
 
-## Target Customers
-### Early Adopters, Short-Term
-  * I *think* people with daytime light sensitivity for whom sunglasses don't work well for them.
-    * 
-    * *People who after they damaged their eyes staring at the sun as a child. They have to wear shades permanently now*
+This is intentionally open-ended, and I'm happy to hear alternative approaches, useful references, or blunt criticism on any topic interesting to you!
 
-
-### Long-term
-  * With a custom/expensive order of a "worse" polarizer that has better transmissibility, can approach much more of night-time driving market. Default polarizer is decent transmissivity, but final darkness is not necessary for 99% of situations.
-  * All-day drivers/motorcycle/bicyclists/pilots/police/trucks either going into the morning/evening sun and can't use a fully-blocking visor but still need to see details
-  * Athletes in the sun:
- [![2024 MLB Sun Causing Dropped Ball](http://img.youtube.com/vi/ILB3RLGkgXA/0.jpg)](http://www.youtube.com/watch?v=ILB3RLGkgXA "2024 MLB Sun Causing Dropped Ball")
-  * Nighttime driving in the countryside, there are occasional glaring headlights and no streetlights to keep your pupils constricted. Causes pain and potentially very dangerous whiteout for multiple seconds. Try it yourself at nighttime / a dark room with your phone LED pointed at your eyes!
-    * Especially a problem in India, where drivers use high beams a lot and there are fewer streetlights, potholes, animals and dark-skinned people crossing, etc. However budget and quality requirements are a lot less than USA.
-    * Problem is also worse with older drivers (pupils don't re-dilate quickly) and those with astigmatism and other visual problems (glare "halo" is even wider and more distracting)
-    * Tall trucks/SUVs with high headlights still need to see the road too! But cause much suffering for sedan drivers.
-    * Drivers of tall vehicles (trucks) still suffer from people using high beams even though they are high up.
-
-## Non-Target Customers
-  * People who are in the sun a lot but are fine with sunglasses. They are generally younger, don't have 
-
-## Stretch Customers
-  * Fishing in choppy water. Apparently normal polarized sunglasses don't work? Might be interesting to have a one-filter version that has an LCD for rotating pixels oncoming light so its better cancelled by the filter without making the pixel dark/black.
-    * FSTN refresh rate is pretty fast still. https://youtu.be/6h2D-CnLQEc?si=O5FLN6evWkWHE9HI&t=299
-  
-
-See the wiki page: https://github.com/nolanhergert/HeadlightBlocker/wiki
-
-POC OpenCV code (for stepper motor solution, probably obsolete) is here: https://github.com/nolanhergert/lib/blob/master/python/examples/headlight_blocker.py
-
-Can leverage CH32V003fun to read from camera using DMA? Use this example https://github.com/cnlohr/ch32v003fun/blob/master/examples/dma_gpio/dma_gpio.c but change this line to be INDR? `DMA1_Channel2->PADDR = (uint32_t)&GPIOC->OUTDR;`
+For the messier day-to-day notes, experiments, and project history, see the [project wiki](https://github.com/nolanhergert/HeadlightBlocker/wiki). Fair warning: it's scattered rough notes rather than a polished narrative, but it's the most honest record of how this has actually gone.
