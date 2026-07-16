@@ -49,19 +49,18 @@ The Rust code itself isn't published — the camera chip's register-level detail
 
 The demos below are from DynEye, an earlier project and startup founded by Chris Mullin that took on a similar idea before I got involved. Good historical context, and worth a look at the broader concept in action:
 
-[DynEye archive](https://web.archive.org/web/20240226041115/http://www.dyneye.com/)
-
-A CBS News segment on nighttime headlight glare (not about DynEye specifically, but a good overview of the underlying problem):
-
-[![CBS News segment on nighttime headlight glare](http://img.youtube.com/vi/w0nBlZwUT3s/0.jpg)](https://www.youtube.com/watch?v=w0nBlZwUT3s "CBS News segment on nighttime headlight glare")
-
 DynEye demo clips:
-
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/8a296c67-bb7e-49ee-8bd9-374424baa6de
 
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/1ff41848-ae48-455d-8731-473bc94387cb
 
+[DynEye archive](https://web.archive.org/web/20240226041115/http://www.dyneye.com/)
+
 Press coverage: [Popular Science: Glare Killer](https://www.popsci.com/diy/article/2011-05/2011-invention-awards-glare-killer/), [Inside Science: LCD sunglasses](https://www.insidescience.org/video/lcd-sunglasses-block-glare-moving-pixels)
+
+A CBS News segment on nighttime headlight glare (not about DynEye specifically, but a good overview of the underlying problem):
+
+[![CBS News segment on nighttime headlight glare](http://img.youtube.com/vi/w0nBlZwUT3s/0.jpg)](https://www.youtube.com/watch?v=w0nBlZwUT3s "CBS News segment on nighttime headlight glare")
 
 ## Following along
 
