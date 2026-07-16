@@ -50,6 +50,7 @@ The Rust code itself isn't published — the camera chip's register-level detail
 The demos below are from DynEye, an earlier project and startup founded by Chris Mullin that took on a similar idea before I got involved. Good historical context, and worth a look at the broader concept in action:
 
 DynEye demo clips:
+
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/8a296c67-bb7e-49ee-8bd9-374424baa6de
 
 https://github.com/nolanhergert/HeadlightBlocker/assets/377502/1ff41848-ae48-455d-8731-473bc94387cb
