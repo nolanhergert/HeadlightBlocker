@@ -1,5 +1,5 @@
 # HeadlightBlocker
-Note! AI assisted
+Note! Definitely AI assisted
 
 I'm prototyping low-cost eyewear that selectively dims intense light — sunlight, reflected glare, oncoming headlights — while leaving the rest of the scene visible.
 
