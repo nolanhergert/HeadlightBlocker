@@ -1,5 +1,7 @@
 # HeadlightBlocker
 
+Survey!: https://docs.google.com/forms/d/e/1FAIpQLSdY2P8LRLevYkaR5bCc3iHimnQf3yeSkIpHeLKnRqFuZlO9xA/viewform?usp=header
+
 I'm prototyping low-cost eyewear that selectively dims bright light sources—sunlight, reflected glare, oncoming headlights—without unnecessarily darkening the rest of your field of view.
 
 Ordinary sunglasses solve glare by reducing all incoming light. This works well during the day, but it is a fairly blunt instrument: if one small part of the scene is uncomfortably bright, you make everything darker to compensate. The basic idea behind this project is to selectively block the bright part instead.
