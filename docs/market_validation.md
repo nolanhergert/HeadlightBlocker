@@ -15,7 +15,7 @@ First, a brief tangent. I have found the concept of ikigai very helpful when eva
 
 Perhaps you’ve also wondered, does something exist to fix this? If not, is the problem technical, economic, political? All of the above?
 
-FWhile I do think that I'm not the only person that would like one, 
+While I do think that I'm not the only person that would like one, 
 
 
 In this video series, I’m going to attempt to give an introduction to the glare reduction space, detail the concepts behind a potential solution within it, and give a very incomplete introduction to invention and business along the way. It should be accessible and at least mildly interesting for everyone, but if you'd rather not stick around, no problem! Just help us out by taking the survey in the pinned comment on your way out! Thanks, Bye!
