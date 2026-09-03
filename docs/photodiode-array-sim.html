@@ -1,0 +1,738 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photodiode array — motion sensing sandbox</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg: #0f1218;
+    --panel: #161b24;
+    --panel-2: #131720;
+    --border: #262d3d;
+    --text: #e8eaf0;
+    --text-dim: #8a93a8;
+    --text-dimmer: #5b6478;
+    --amber: #ffb238;
+    --amber-dim: #7a5c22;
+    --teal: #4fd6c8;
+    --teal-dim: #235953;
+    --red: #ff6b6b;
+    --grid-line: #232a3a;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    padding: 28px 20px 60px;
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+
+  header{ margin: 0 auto 22px; max-width: 760px; }
+  header h1{
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header p{
+    color: var(--text-dim);
+    font-size: 14.5px;
+    margin: 0;
+  }
+
+  details.help{
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel-2);
+  }
+  details.help summary{
+    cursor: pointer;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    user-select: none;
+  }
+  details.help summary:hover{ color: var(--text); }
+  details.help .help-body{
+    padding: 4px 16px 16px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+  }
+  details.help .help-body p{ margin: 8px 0; }
+  details.help .help-body b{ color: var(--text); font-weight: 600; }
+
+  .layout{
+    max-width: 640px;
+    margin: 22px auto 0;
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel + .panel{ margin-top: 18px; }
+
+  .panel-title{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  .panel-title h2{
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text);
+  }
+  .panel-title .sub{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  canvas{ display:block; width:100%; height:auto; touch-action: none; }
+
+  .scene-canvas-wrap{
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel-2);
+  }
+
+  .controls{ margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .ctrl-row{ display:flex; align-items:center; gap: 10px; }
+  .ctrl-row label{
+    font-size: 12.5px; color: var(--text-dim);
+    width: 128px; flex-shrink: 0;
+  }
+  .ctrl-row .val{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    width: 74px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  input[type=range]{
+    -webkit-appearance: none;
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--grid-line);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    cursor: pointer;
+    border: 2px solid #14161c;
+  }
+  input[type=range]::-moz-range-thumb{
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    cursor: pointer;
+    border: 2px solid #14161c;
+  }
+
+  .row-buttons{ display:flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+  button{
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: border-color .12s, color .12s;
+  }
+  button:hover{ border-color: #3a4358; color: #fff; }
+  button:active{ transform: translateY(1px); }
+  button.primary{
+    background: #2a2210;
+    border-color: var(--amber-dim);
+    color: var(--amber);
+  }
+  button.primary:hover{ border-color: var(--amber); }
+
+  .seg{
+    display:inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .seg button{
+    border: none;
+    border-radius: 0;
+    background: var(--panel-2);
+  }
+  .seg button + button{ border-left: 1px solid var(--border); }
+  .seg button.active{
+    background: #12312d;
+    color: var(--teal);
+  }
+
+  .switch-row{ display:flex; align-items:center; justify-content: space-between; gap: 10px; }
+  .switch-row .label-block{ font-size: 12.5px; color: var(--text-dim); }
+  .switch-row .label-block .hint{ display:block; font-size: 11px; color: var(--text-dimmer); margin-top: 2px; }
+  .switch{
+    width: 38px; height: 22px; border-radius: 12px;
+    background: var(--grid-line); border: 1px solid var(--border);
+    position: relative; cursor: pointer; flex-shrink:0;
+    transition: background .15s;
+  }
+  .switch .knob{
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--text-dim);
+    transition: left .15s, background .15s;
+  }
+  .switch.on{ background: #123a35; border-color: var(--teal-dim); }
+  .switch.on .knob{ left: 18px; background: var(--teal); }
+
+  .badge{
+    display:inline-flex; align-items:center; gap: 6px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-top: 8px;
+  }
+  .badge.warn{ background: #2c1414; color: var(--red); border: 1px solid #5a2a2a; }
+  .badge.ok{ background: #10281f; color: var(--teal); border: 1px solid #1f4a41; }
+  .badge .dot{ width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .badge.pulse .dot{ animation: pulse 1.1s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.25;} }
+
+  .caption{
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    margin-top: 8px;
+    line-height: 1.45;
+  }
+
+  .legend-row{
+    display:flex; gap:16px; margin-top:10px; flex-wrap:wrap;
+    font-size: 11px; color: var(--text-dimmer);
+  }
+  .legend-row .item{ display:flex; align-items:center; gap:6px; }
+  .legend-row .swatch{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  footer{
+    max-width: 760px;
+    margin: 30px auto 0;
+    color: var(--text-dimmer);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Photodiode array motion-sensing sandbox</h1>
+    <p>Drag a light source around to see how aperture size and array resolution shape what a quadrant sensor can and can't detect — and how a mirrored pair of sources can cancel out completely.</p>
+    <details class="help">
+      <summary>How to read this</summary>
+      <div class="help-body">
+        <p><b>Left:</b> the sensor plane itself — each colored square is one photodiode. A point light source forms a tight, uniform circle of light on this plane, sized by the aperture; that's the bright circle with the white border. Drag a source to move it — it stays wherever you drop it, so you can compare positions and see the cell readouts update in real time.</p>
+        <p><b>Brightness fades near the horizon, on purpose.</b> Instead of distorting the pixel shapes to show field-of-view compression, this fades the source's brightness (and its contribution to the cells) as its elevation angle approaches 90° — a real effect, since a fixed aperture presents a foreshortened, shrinking opening to light arriving at a grazing angle. The dashed circle marks how far the sensor reaches straight-on (along its edges); the square's corners reach a little further, since a square sensor doesn't perfectly match a round field of view.</p>
+        <p><b>Aperture size</b> defaults to roughly one photodiode's width — the "aperture the size of one photodiode" setup — but you can go smaller (sharper, dimmer) or larger (blurrier, brighter) to see the tradeoff.</p>
+        <p><b>Right:</b> two traces derived from the live cell values — the <span style="color:var(--teal)">centroid</span> (what a simple sum/difference sun-tracker circuit reads) and the <span style="color:var(--amber)">spread</span> (a shape metric describing how spread out the light is, not just where its center is).</p>
+        <p><b>Mirror mode</b> pairs each source with a twin reflected through the center — drag one and its twin moves in exact opposition automatically. This is the worst case for a centroid-only tracker: the two positions cancel in the sum/difference channels by construction, every time, regardless of grid size.</p>
+        <p><b>Why 2×2 has a hard blind spot, not just a soft one:</b> in a 2×2 grid every cell sits exactly the same distance from the center. So the spread metric — a weighted average of each cell's distance from center — can't change no matter how light is redistributed among the four quadrants, as long as the centroid stays put. It's mathematically flat, not just quiet. A 3×3 grid breaks this: the center cell sits at a different distance from center than the edge and corner cells, so spread becomes informative again.</p>
+      </div>
+    </details>
+  </header>
+
+  <div class="layout">
+      <div class="panel">
+        <div class="panel-title">
+          <h2>Sensor plane</h2>
+          <span class="sub" id="comboReadout">2×2 · ±0° usable</span>
+        </div>
+        <div class="scene-canvas-wrap">
+          <canvas id="sceneCanvas"></canvas>
+        </div>
+        <div class="legend-row">
+          <span class="item"><span class="swatch" style="background:var(--amber)"></span>brighter cell = more light on that photodiode</span>
+          <span class="item">dashed circle = straight-on sensor reach</span>
+          <span class="item">source brightness fades near the horizon</span>
+        </div>
+
+        <div class="controls">
+          <div class="ctrl-row">
+            <label for="apertureSlider">Aperture size</label>
+            <input type="range" id="apertureSlider" min="0.03" max="1.6" step="0.01" value="1.0">
+            <span class="val" id="apertureVal">1.00</span>
+          </div>
+
+          <div class="switch-row">
+            <div class="label-block">
+              Mirror mode
+              <span class="hint">Pair sources point-reflected through center, mirrored as you drag</span>
+            </div>
+            <div class="switch" id="mirrorSwitch"><div class="knob"></div></div>
+          </div>
+
+          <div class="row-buttons">
+            <span class="seg" id="gridSeg">
+              <button data-n="2">2×2</button>
+              <button data-n="3">3×3</button>
+              <button data-n="4">4×4</button>
+            </span>
+            <button id="addBtn">Add source</button>
+            <button id="removeBtn">Remove source</button>
+          </div>
+          <div class="row-buttons">
+            <button id="resetBtn">Reset scene</button>
+            <button id="demoBtn" class="primary">Load cancellation demo</button>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <footer>Simplified geometric model: pinhole projection (image radius = focal length × tan(elevation)), uniform-disk aperture kernel, cosine brightness falloff with elevation, no noise floor. Built for intuition, not photometric accuracy.</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- state ----------
+  const state = {
+    N: 2,
+    focal: 0.6, // fixed — a reasonable pinhole focal length, no longer user-adjustable
+    aperture: 1.0, // diameter, in image-space units (sensor spans -1..1)
+    mirror: false,
+    sources: [],
+    nextId: 1,
+  };
+
+  const COLORS = ['#ffb238','#4fd6c8','#ff8fb1','#9fd15b','#7ea6ff','#e07bff'];
+
+  function hexToRgb(hex){
+    hex = hex.replace('#','');
+    const v = parseInt(hex,16);
+    return [(v>>16)&255, (v>>8)&255, v&255];
+  }
+  function lighten(hex, amt){
+    const [r,g,b] = hexToRgb(hex);
+    const mix = c => Math.round(c+(255-c)*amt);
+    return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+  }
+
+  function makeSource(x,y,opts){
+    opts = opts || {};
+    return {
+      id: state.nextId++,
+      x:x, y:y,
+      isSlave: !!opts.isSlave,
+      partnerId: opts.partnerId || null,
+      color: opts.color || COLORS[(state.sources.length) % COLORS.length],
+    };
+  }
+
+  function defaultScene(){
+    state.sources = [];
+    state.nextId = 1;
+    state.sources.push(makeSource(0.05, -0.35));
+  }
+
+  // mirrored sources always sit point-reflected through the origin,
+  // recomputed each frame from their (draggable) partner
+  function syncSlaves(){
+    for (const s of state.sources){
+      if (!s.isSlave) continue;
+      const p = state.sources.find(q=>q.id===s.partnerId);
+      if (!p) continue;
+      s.x = -p.x; s.y = -p.y;
+    }
+  }
+
+  function elevationDeg(x,y){
+    const r = Math.min(Math.hypot(x,y), 0.999);
+    return r*90;
+  }
+  function falloff(elevDeg){
+    return Math.max(0, Math.cos(elevDeg*Math.PI/180));
+  }
+
+  function achievedHalfFOV(){
+    return Math.atan(1/state.focal) * 180/Math.PI;
+  }
+
+  // dome (elevation/azimuth, |pos|<=~1) -> image plane (sensor) coords
+  function project(x,y){
+    const r = Math.min(Math.hypot(x,y), 0.999);
+    const elevRad = r*(Math.PI/2);
+    const az = r>1e-6 ? Math.atan2(y,x) : 0;
+    const mag = state.focal * Math.tan(elevRad);
+    return { ix: mag*Math.cos(az), iy: mag*Math.sin(az) };
+  }
+
+  function boxOverlap(center, halfWidth, cellMin, cellMax){
+    const lo = Math.max(cellMin, center-halfWidth);
+    const hi = Math.min(cellMax, center+halfWidth);
+    return Math.max(0, hi-lo);
+  }
+
+  function computeSensor(){
+    const N = state.N;
+    const w = 2/N;
+    const halfWidth = state.aperture/2;
+    const cells = [];
+    for (let j=0;j<N;j++){
+      for (let i=0;i<N;i++){
+        cells.push({ i,j, cx: -1+w*(i+0.5), cy: -1+w*(j+0.5), w, value: 0 });
+      }
+    }
+    for (const s of state.sources){
+      const { ix, iy } = project(s.x, s.y);
+      const elev = elevationDeg(s.x, s.y);
+      const intensity = falloff(elev);
+      if (intensity <= 0) continue;
+      for (const c of cells){
+        const ox = boxOverlap(ix, halfWidth, c.cx-w/2, c.cx+w/2);
+        const oy = boxOverlap(iy, halfWidth, c.cy-w/2, c.cy+w/2);
+        c.value += ox*oy*intensity;
+      }
+    }
+    let total=0, mx=0, my=0, sp=0;
+    for (const c of cells) total += c.value;
+    if (total > 1e-9){
+      for (const c of cells){ mx += c.value*c.cx; my += c.value*c.cy; }
+      mx/=total; my/=total;
+      for (const c of cells){ sp += c.value*(c.cx*c.cx + c.cy*c.cy); }
+      sp/=total;
+      sp -= (mx*mx+my*my);
+    } else { mx=0; my=0; sp=0; }
+    return { cells, total, mx, my, spread: sp };
+  }
+
+  // ---------- canvas setup ----------
+  function setupCanvas(canvas, cssW, cssH){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+    canvas.style.width = cssW+'px'; canvas.style.height = cssH+'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return ctx;
+  }
+
+  const sceneCanvas = document.getElementById('sceneCanvas');
+  let sceneCtx;
+  let SCENE_W=420, SCENE_H=420;
+
+  function resizeAll(){
+    const w = sceneCanvas.parentElement.clientWidth;
+    SCENE_W = w; SCENE_H = w;
+    sceneCtx = setupCanvas(sceneCanvas, SCENE_W, SCENE_H);
+  }
+
+  // ---------- sensor-plane rendering ----------
+  // Cells live in a fixed image-space window (the physical sensor plane, plus a margin).
+  const IMAGE_RANGE = 1.3;
+  function panelGeom(){
+    const cx = SCENE_W/2, cy = SCENE_H/2;
+    const pxPerUnit = (Math.min(SCENE_W,SCENE_H)/2 - 14) / IMAGE_RANGE;
+    return { cx, cy, pxPerUnit };
+  }
+  function imageToPx(ix,iy){
+    const { cx, cy, pxPerUnit } = panelGeom();
+    return { px: cx + ix*pxPerUnit, py: cy - iy*pxPerUnit };
+  }
+
+  // Source markers use a separate elevation-linear mapping that spans the full
+  // panel radius, so a source can be dragged smoothly all the way to true 90°
+  // elevation (fading to nothing via cosine falloff) instead of hitting an early
+  // display clamp while its underlying position kept changing off-screen.
+  function domeGeom(){
+    const cx = SCENE_W/2, cy = SCENE_H/2;
+    const domeR = Math.min(SCENE_W,SCENE_H)/2 - 10;
+    return { cx, cy, domeR };
+  }
+  function domeToPx(x,y){
+    const { cx, cy, domeR } = domeGeom();
+    return { px: cx + x*domeR, py: cy - y*domeR };
+  }
+  function pxToDome(px,py){
+    const { cx, cy, domeR } = domeGeom();
+    return { x: (px-cx)/domeR, y: -(py-cy)/domeR };
+  }
+
+  function valueToColor(v, vmax, alpha){
+    const t = vmax>1e-6 ? Math.min(v/vmax,1) : 0;
+    const r0=19,g0=23,b0=32;
+    const r1=255,g1=178,b1=56;
+    const r = Math.round(r0+(r1-r0)*t);
+    const g = Math.round(g0+(g1-g0)*t);
+    const b = Math.round(b0+(b1-b0)*t);
+    return `rgba(${r},${g},${b},${alpha==null?1:alpha})`;
+  }
+
+  function fullBrightnessScale(){
+    // theoretical max a single cell could read: every current source, perfectly
+    // aligned (falloff=1) and fully overlapping that one cell, added together.
+    const w = 2/state.N;
+    const bestSingleSource = Math.min(state.aperture, w) * Math.min(state.aperture, w);
+    const n = Math.max(state.sources.length, 1);
+    return n * bestSingleSource;
+  }
+
+  function drawSensorCells(cells){
+    const ctx = sceneCtx;
+    const vmax = fullBrightnessScale();
+
+    for (const c of cells){
+      const topLeft = imageToPx(c.cx-c.w/2, c.cy+c.w/2);
+      const size = c.w * panelGeom().pxPerUnit;
+      ctx.fillStyle = valueToColor(c.value, vmax, 1);
+      ctx.fillRect(topLeft.px, topLeft.py, size, size);
+      ctx.strokeStyle = 'rgba(15,18,24,0.9)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(topLeft.px, topLeft.py, size, size);
+
+      if (size > 34){
+        const center = imageToPx(c.cx, c.cy);
+        const pct = vmax>1e-9 ? (c.value/vmax*100) : 0;
+        ctx.fillStyle = pct > 55 ? 'rgba(15,18,24,0.85)' : 'rgba(232,234,240,0.75)';
+        ctx.font = '10px IBM Plex Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(pct.toFixed(0)+'%', center.px, center.py+3);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    // emphasize the sensor's outer boundary
+    const tl = imageToPx(-1,1), size = 2*panelGeom().pxPerUnit;
+    ctx.strokeStyle = 'rgba(139,147,168,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(tl.px, tl.py, size, size);
+  }
+
+  function sourceRenderRadius(){
+    const { pxPerUnit } = panelGeom();
+    return Math.max(5, Math.min((state.aperture/2)*pxPerUnit, Math.min(SCENE_W,SCENE_H)*0.42));
+  }
+
+  function drawScene(cells){
+    const ctx = sceneCtx;
+    ctx.clearRect(0,0,SCENE_W,SCENE_H);
+    ctx.fillStyle = '#0f1218';
+    ctx.fillRect(0,0,SCENE_W,SCENE_H);
+
+    const { cx, cy, pxPerUnit } = panelGeom();
+
+    // sensor cells
+    drawSensorCells(cells);
+
+    // reference circle: straight-on sensor reach (image radius = 1)
+    ctx.strokeStyle = 'rgba(79,214,200,0.5)';
+    ctx.setLineDash([4,4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx,cy,pxPerUnit,0,Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // center marker
+    ctx.fillStyle = '#3a4358';
+    ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fill();
+
+    const halfFov = achievedHalfFOV();
+
+    // mirror connector lines
+    if (state.mirror){
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+      ctx.setLineDash([3,4]);
+      for (const s of state.sources){
+        if (s.isSlave) continue;
+        const p = state.sources.find(q=>q.partnerId===s.id);
+        if (!p) continue;
+        const a = domeToPx(s.x,s.y), b = domeToPx(p.x,p.y);
+        ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    // sources: tight, hard-edged circle sized by aperture, brightened + white border,
+    // dimmed smoothly by cosine falloff all the way out to the true horizon
+    const rPx = sourceRenderRadius();
+    for (const s of state.sources){
+      const elev = elevationDeg(s.x, s.y);
+      const alpha = Math.min(0.7, Math.max(0.02, falloff(elev)));
+      const { px, py } = domeToPx(s.x, s.y);
+
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(px,py,rPx,0,Math.PI*2);
+      ctx.fillStyle = lighten(s.color, 0.35);
+      ctx.fill();
+      ctx.lineWidth = s.isSlave ? 2.5 : 2;
+      ctx.strokeStyle = s.isSlave ? s.color : 'rgba(255,255,255,0.95)';
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ---------- main loop ----------
+  function loop(){
+    syncSlaves();
+
+    const { cells } = computeSensor();
+
+    drawScene(cells);
+
+    document.getElementById('comboReadout').textContent =
+      `${state.N}×${state.N} · ±${achievedHalfFOV().toFixed(0)}° usable of ±90°`;
+
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- pointer interaction ----------
+  const DRAG_BOUND = 0.999; // ~89.9° elevation — as close to the true horizon as tan() tolerates
+  let dragState = null;
+  sceneCanvas.addEventListener('pointerdown', (e)=>{
+    const rect = sceneCanvas.getBoundingClientRect();
+    const px = (e.clientX-rect.left) * (SCENE_W/rect.width);
+    const py = (e.clientY-rect.top) * (SCENE_H/rect.height);
+    const grabR = sourceRenderRadius();
+    let best=null, bestD=Infinity;
+    for (const s of state.sources){
+      if (s.isSlave) continue;
+      const p = domeToPx(s.x, s.y);
+      const d = Math.hypot(p.px-px, p.py-py);
+      if (d<bestD){ bestD=d; best=s; }
+    }
+    if (best && bestD < grabR){
+      const cursorDome = pxToDome(px,py);
+      dragState = { s: best, offX: best.x - cursorDome.x, offY: best.y - cursorDome.y };
+      sceneCanvas.setPointerCapture(e.pointerId);
+    }
+  });
+  sceneCanvas.addEventListener('pointermove', (e)=>{
+    if (!dragState) return;
+    const rect = sceneCanvas.getBoundingClientRect();
+    const px = (e.clientX-rect.left) * (SCENE_W/rect.width);
+    const py = (e.clientY-rect.top) * (SCENE_H/rect.height);
+    const cursorDome = pxToDome(px,py);
+    let x = cursorDome.x + dragState.offX;
+    let y = cursorDome.y + dragState.offY;
+    const r = Math.hypot(x,y);
+    if (r>DRAG_BOUND){ x = x/r*DRAG_BOUND; y = y/r*DRAG_BOUND; }
+
+    dragState.s.x = x; dragState.s.y = y;
+  });
+  function endDrag(){ dragState = null; }
+  sceneCanvas.addEventListener('pointerup', endDrag);
+  sceneCanvas.addEventListener('pointercancel', endDrag);
+
+  // ---------- UI wiring ----------
+  const apertureSlider = document.getElementById('apertureSlider');
+  apertureSlider.addEventListener('input', ()=>{
+    state.aperture = parseFloat(apertureSlider.value);
+    document.getElementById('apertureVal').textContent = state.aperture.toFixed(2);
+  });
+
+  function setApertureToPixelSize(){
+    const d = 2/state.N;
+    state.aperture = d;
+    apertureSlider.value = d.toFixed(2);
+    document.getElementById('apertureVal').textContent = d.toFixed(2);
+  }
+
+  const mirrorSwitch = document.getElementById('mirrorSwitch');
+  mirrorSwitch.addEventListener('click', ()=>{
+    state.mirror = !state.mirror;
+    mirrorSwitch.classList.toggle('on', state.mirror);
+    if (state.mirror){
+      const leaders = state.sources.filter(s=>!s.isSlave && !state.sources.some(o=>o.partnerId===s.id));
+      for (let i=0;i<leaders.length;i++){
+        const a = leaders[i];
+        if (state.sources.some(o=>o.partnerId===a.id)) continue;
+        const b = makeSource(-a.x,-a.y,{isSlave:true, partnerId:a.id, color:a.color});
+        state.sources.push(b);
+      }
+    } else {
+      for (const s of state.sources) s.isSlave = false;
+      for (const s of state.sources) s.partnerId = null;
+    }
+  });
+
+  const gridSeg = document.getElementById('gridSeg');
+  function setGrid(n){
+    state.N = n;
+    [...gridSeg.querySelectorAll('button')].forEach(b=>{
+      b.classList.toggle('active', parseInt(b.dataset.n)===n);
+    });
+    setApertureToPixelSize();
+  }
+  gridSeg.addEventListener('click', (e)=>{
+    if (e.target.tagName==='BUTTON') setGrid(parseInt(e.target.dataset.n));
+  });
+
+  document.getElementById('addBtn').addEventListener('click', ()=>{
+    if (state.sources.filter(s=>!s.isSlave).length >= 6) return;
+    const k = state.sources.length;
+    const ang = (k*137.5) * Math.PI/180;
+    const rr = 0.3 + (k%3)*0.12;
+    const a = makeSource(Math.cos(ang)*rr, Math.sin(ang)*rr);
+    state.sources.push(a);
+    if (state.mirror){
+      const b = makeSource(-a.x,-a.y,{isSlave:true, partnerId:a.id, color:a.color});
+      state.sources.push(b);
+    }
+  });
+  document.getElementById('removeBtn').addEventListener('click', ()=>{
+    const leaders = state.sources.filter(s=>!s.isSlave);
+    if (leaders.length<=1) return;
+    const last = leaders[leaders.length-1];
+    state.sources = state.sources.filter(s=> s.id!==last.id && s.partnerId!==last.id);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state.mirror = false;
+    mirrorSwitch.classList.remove('on');
+    setGrid(2);
+    defaultScene();
+  });
+
+  document.getElementById('demoBtn').addEventListener('click', ()=>{
+    setGrid(2);
+    state.mirror = true;
+    mirrorSwitch.classList.add('on');
+    state.sources = []; state.nextId = 1;
+    const a = makeSource(0.18, 0.12, {color:'#ffb238'});
+    const b = makeSource(-a.x,-a.y,{isSlave:true, partnerId:a.id, color:a.color});
+    state.sources.push(a,b);
+  });
+
+  // ---------- init ----------
+  window.addEventListener('resize', resizeAll);
+  defaultScene();
+  resizeAll();
+  setGrid(2);
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,8 @@ Who am I making this video for?
 * Anyone at least mildly interested in the topic, at least for initial one. ELI5 / 10 level? Spark curiosity
 
 
+Latest feedback from ChatGPT: https://chatgpt.com/s/t_6a94d9cdb21c8191a6249e5ab7503cf3
+
 # Checklist
 * Tripod
 * Glasses stuff, including two sunglasses and ... two light sources?
@@ -109,6 +111,7 @@ How will the image pipeline work? It's not as complicated as you might think!
 
 ## Adjustable Camera Experiment?
 
+
 ## Thresholding
 
 Cameras also have a set exposure that they use to image the world with. In our case though, we want to only see the light sources that are significantly brighter than the other objects in the scene. By significantly lowering the exposure, this automatically thresholds the image and saves on power!
@@ -116,7 +119,7 @@ Cameras also have a set exposure that they use to image the world with. In our c
 ## Mapping
 Drawing the opaque region is similarly straightforward. Just invert the thresholded image!
 
-Well, there are a *few* more details but we can skip them for now.
+Well, there are a *few* more details (calibration, dilation to match pupil size, etc) but we can skip them for now.
 
 ## Required resolution / FOV
 The power drawn by the camera is proportional to the camera's resolution
@@ -129,6 +132,8 @@ Do we actually need a high resolution camera if our output resolution is limited
 ### Detection
 ### Localization
 ### Tracking
+
+A potential live demo of a "fake" quadrant photodiode with a piece of paper folded into a box with a grabbable edge and an aperture cut into it. Box is to keep out other light sources, or at least to keep them diffuse. Baking paper is non stick, so hard to glue together. Need paper a quadrant photodiode working for one light, but it's ambiguous when multiple lights are in the same scene and move in opposite directions. You know *something* changed, but don't know what. At the end of the day, this requires take a higher resolution photo in this situation. Thankfully 
 
 # Wrap Up
 So, a device certainly seems plausible! But, that leaves the open question, "why hasn't anyone *else* done it yet?" Well, as it turns out, a number of companies have tried, and they even had prototypes! <show them in the background> So, why did they stop pursuing it? Oh my, look at the time, I guess we'll have to leave that topic for another video! Feel free to read ahead on the Github page in the description, and leave any comments and questions you have below! I read them all! Bye! :)

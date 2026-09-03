@@ -43,7 +43,7 @@ That raises a collection of related questions. What pixel geometry produces the 
 
 Custom LCD samples are relatively slow and expensive iterations, so I built a simulator to explore pixel geometries and spacing before ordering glass.
 
-Try it here: [LCD pixel-pattern blur simulator](https://nolanhergert.github.io/HeadlightBlocker/pixel_pattern_blur_simulator.html).
+Try it here: [LCD pixel-pattern blur simulator](https://nolanhergert.github.io/HeadlightBlocker/docs/pixel_pattern_blur_simulator.html).
 
 ### Getting more contrast from passive-matrix LCDs
 
